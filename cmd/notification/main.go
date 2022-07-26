@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"net/http"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -16,12 +15,12 @@ import (
 	"github.com/iden3/signed-notification/pkg/service"
 )
 
-func main()  {
+func main() {
 	cfg, err := config.ParseNotificationConfig()
 	if err != nil {
 		log.Fatal("failed parse notification config:", err)
 	}
-	
+
 	log.SetEnv(cfg.Log.Env)
 	// set log level from config
 	log.SetLevelStr(cfg.Log.Level)
@@ -32,7 +31,7 @@ func main()  {
 	}
 	privK, err := x509.ParsePKCS1PrivateKey(b.Bytes)
 	if err != nil {
-		log.Fatal("failed decode public key")
+		log.Fatal("failed decode private key:", err)
 	}
 
 	cryptographer, err := service.NewCryptographerService(privK)

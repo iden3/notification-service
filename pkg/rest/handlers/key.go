@@ -17,9 +17,9 @@ func NewKeyHandler(s *service.Cryptographer) *KeyHandler {
 }
 
 func (h *KeyHandler) GetPublicKey(w http.ResponseWriter, r *http.Request) {
-	pkPem, err := h.keyService.MarshalToPemPublicKey()
+	pkPem, err := h.keyService.MarshalPubKeyToPem()
 	if err != nil {
-		utils.ErrorJSON(w, r, http.StatusInternalServerError, err, "failed read public key", 0)
+		utils.ErrorJSON(w, r, http.StatusInternalServerError, err, "failed encode public key", 0)
 		return
 	}
 	_, err = w.Write(pkPem)

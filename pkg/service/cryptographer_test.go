@@ -87,7 +87,7 @@ func TestMarshalToPemPublicKey(t *testing.T) {
 	cr, err := NewCryptographerService(privK)
 	require.NoError(t, err)
 
-	pemPk, err := cr.MarshalToPemPublicKey()
+	pemPk, err := cr.MarshalPubKeyToPem()
 	require.NoError(t, err)
 	require.Equal(t, publicKey, string(pemPk))
 }

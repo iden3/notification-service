@@ -5,7 +5,6 @@ FROM golang:1.18-alpine as base
 
 WORKDIR /build
 
-#COPY . .
 COPY ./cmd ./cmd
 COPY ./pkg ./pkg
 COPY go.mod ./

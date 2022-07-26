@@ -62,7 +62,7 @@ func TestProxy(t *testing.T) {
 	require.NoError(t, err)
 
 	// get public key in pem format
-	pemPubKey, err := proxy.cryptographer.MarshalToPemPublicKey()
+	pemPubKey, err := proxy.cryptographer.MarshalPubKeyToPem()
 	require.NoError(t, err)
 	pubk, _ := pem.Decode(pemPubKey)
 	require.NotNil(t, pubk)

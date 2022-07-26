@@ -38,7 +38,7 @@ func (ps *ProxyService) Proxy(ctx context.Context, msg *Message) ([]byte, error)
 	for _, m := range msg.PushMetadata.Devices {
 		d, err := base64.StdEncoding.DecodeString(m.Ciphertext)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, errors.Errorf("invalid base64 format: %s", err)
 		}
 		plaintext, err := ps.cryptographer.Decrypt(m.Alg, d)
 		if err != nil {

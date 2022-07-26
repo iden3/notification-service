@@ -39,13 +39,13 @@ func NewCryptographerService(pk crypto.PrivateKey) (*Cryptographer, error) {
 	}, nil
 }
 
-func (cr *Cryptographer) MarshalToPemPublicKey() ([]byte, error) {
+func (cr *Cryptographer) MarshalPubKeyToPem() ([]byte, error) {
 	raw, err := x509.MarshalPKIXPublicKey(cr.publicKey)
 	if err != nil {
 		return nil, err
 	}
 	b := &pem.Block{
-		Type:    "PUBLIC KEY",
+		Type:  "PUBLIC KEY",
 		Bytes: raw,
 	}
 	w := bytes.NewBuffer([]byte{})
@@ -57,6 +57,7 @@ func (cr *Cryptographer) MarshalToPemPublicKey() ([]byte, error) {
 }
 
 func (cr *Cryptographer) Decrypt(alg string, msg []byte) ([]byte, error) {
+	// TODO(illia-korotia): refactor this part. A lot of checks here.
 	if cr.alg != alg {
 		return nil, fmt.Errorf("'%s' alg doesn't support", alg)
 	}
@@ -67,6 +68,8 @@ func (cr *Cryptographer) Decrypt(alg string, msg []byte) ([]byte, error) {
 	switch cr.alg {
 	case rsaAlg:
 		plaintext, err = cr.privateKey.Decrypt(rand.Reader, msg, &rsa.OAEPOptions{
+			// TODO(illia-korotia): for more flexibility, we can specify a hash function
+			// in request. like we set algorithm
 			Hash:  crypto.SHA512,
 			Label: nil,
 		})

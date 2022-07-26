@@ -1,0 +1,93 @@
+package service
+
+import (
+	"crypto/x509"
+	"encoding/pem"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+const (
+	privateKey = `-----BEGIN RSA PRIVATE KEY-----
+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
+-----END RSA PRIVATE KEY-----`
+	publicKey=`-----BEGIN PUBLIC KEY-----
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAy20zM0kP+kjsDJYY/FHY
+oHDWdQNcdchYTv41KoMVJlBkLoLSEGbgCwD2G5Ow1el+o/GUvyWfWMy/tdtkZY9H
+vWkCT9hZeB/yF8CCgo78vneDvM8zS8E0Lf3RTmTFcKEQw3IYW7KllOK4hcv/ATPE
+xj1os+KgkWBXMbnyHGs/h/aa09YmUh6onNiLezW+bY4pH1DROurlm8KhuPlSlTHN
+eakD3qRJ50CuCye6L49Yl3dvOyeIXaRDZArHBhQ/FxMMC5nUlDLoKXkKPUwSH+cZ
+tj/JKWP8jx7wraApF/5CWG9by6V1ZjZr+3oDR52wdxYEEQ19h45hkE9/C02bZY/Z
+0JLhfYZsH3SWfZJWwcd/R8oUthoQO2NjHo16alsrOnPbVHQESSWKfIzNQT3e32mM
+lILj76lGmOj6kFv/UnVvrXe8K4njk/fxhS8QPbR9iG+Amb9pvQiMbFOmG1ksZTQB
+eqBv/o1lM2q1xUr0FDRKxmrvCbjHt846jZ6n6agu20bFe7DZ6i35DYmyoPJJ61qu
+coTycQHagesih5rk1r4GT+A/VkFHz3J6rgGIASl+7nn0EKA41VBaAOPKW9f3nKgN
+XmBZSmdRNHWfpuUMdfUCQSAfNZ3b2/hId3QI7KWQWm6oDGDpOe3F3u49lrIhYrt1
+vqJY8UIEgAiZGOeGpF1+QekCAwEAAQ==
+-----END PUBLIC KEY-----
+`
+)
+
+func TestMarshalToPemPublicKey(t *testing.T) {
+	b, _ := pem.Decode([]byte(privateKey))
+	require.NotNil(t, b)
+
+	privK, err := x509.ParsePKCS1PrivateKey(b.Bytes)
+	require.NoError(t, err)
+
+	cr, err := NewCryptographerService(privK)
+	require.NoError(t, err)
+
+	pemPk, err := cr.MarshalToPemPublicKey()
+	require.NoError(t, err)
+	require.Equal(t, publicKey, string(pemPk))
+}

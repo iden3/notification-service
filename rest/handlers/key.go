@@ -1,21 +1,24 @@
 package handlers
 
 import (
+	"github.com/iden3/notification-service/services"
 	"net/http"
 
-	"github.com/iden3/signed-notification/pkg/log"
-	"github.com/iden3/signed-notification/pkg/rest/utils"
-	"github.com/iden3/signed-notification/pkg/service"
+	"github.com/iden3/notification-service/log"
+	"github.com/iden3/notification-service/rest/utils"
 )
 
+// KeyHandler is a handler for ppg key info
 type KeyHandler struct {
-	keyService *service.Cryptographer
+	keyService *services.Crypto
 }
 
-func NewKeyHandler(s *service.Cryptographer) *KeyHandler {
+// NewKeyHandler creates new handler for public key queries
+func NewKeyHandler(s *services.Crypto) *KeyHandler {
 	return &KeyHandler{keyService: s}
 }
 
+// GetPublicKey return public key of push gateway
 func (h *KeyHandler) GetPublicKey(w http.ResponseWriter, r *http.Request) {
 	pkPem, err := h.keyService.MarshalPubKeyToPem()
 	if err != nil {

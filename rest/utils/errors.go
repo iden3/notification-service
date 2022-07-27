@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-chi/render"
 
-	"github.com/iden3/signed-notification/pkg/log"
+	"github.com/iden3/notification-service/log"
 )
 
 // ErrorJSON makes json and respond with error
@@ -67,4 +67,3 @@ func (err httpErr) Error() string {
 func (err httpErr) Unwrap() error {
 	return err.err
 }
-

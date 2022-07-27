@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"bytes"
@@ -19,14 +19,28 @@ type notification struct {
 	Content Content  `json:"content"`
 }
 
+// NotificationStatus is a notification status
+type NotificationStatus string
+
+const (
+	// NotificationStatusSuccess is for pushes that are sent to APNS / FCM
+	NotificationStatusSuccess NotificationStatus = "success"
+	// NotificationStatusRejected is for pushes that are rejected by APNS / FCM
+	NotificationStatusRejected NotificationStatus = "rejected"
+	// NotificationStatusFailed is for pushes that were not sent
+	NotificationStatusFailed NotificationStatus = "failed"
+)
+
+// Device info
 type Device struct {
 	AppID   string `json:"app_id"`
 	Pushkey string `json:"pushkey"`
 }
 
+// Content for matrix message
 type Content struct {
 	Body    json.RawMessage `json:"body"`
-	MsgType string `json:"msgtype"`
+	MsgType string          `json:"msgtype"`
 }
 
 // NotificationClient PPG for notify devices.
@@ -35,8 +49,13 @@ type NotificationClient struct {
 	url  string
 }
 
-// NewClient create PPG client.
-func NewClient(conn *http.Client, url string) *NotificationClient {
+// notificationRes PPG for notify devices.
+type notificationRes struct {
+	Rejected []string `json:"rejected"`
+}
+
+// NewNotificationClient create PPG client.
+func NewNotificationClient(conn *http.Client, url string) *NotificationClient {
 	return &NotificationClient{
 		conn: conn,
 		url:  fmt.Sprintf("%s%s", strings.TrimSuffix(url, "/"), path),
@@ -44,7 +63,7 @@ func NewClient(conn *http.Client, url string) *NotificationClient {
 }
 
 // Notify send notification in json format to devices.
-func (c *NotificationClient) Notify(ctx context.Context, listDevices []Device, content Content) ([]byte, error) {
+func (c *NotificationClient) Notify(ctx context.Context, listDevices []Device, content Content) ([]string, error) {
 	reqData := struct {
 		Notification notification `json:"notification"`
 	}{
@@ -70,10 +89,19 @@ func (c *NotificationClient) Notify(ctx context.Context, listDevices []Device, c
 	}
 	defer respBody.Body.Close()
 
+	if respBody.StatusCode != http.StatusOK {
+		return nil, errors.New("can't send push notification")
+	}
 	data, err := io.ReadAll(respBody.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	return data, nil
+	var pushResult notificationRes
+	err = json.Unmarshal(data, &pushResult)
+	if err != nil {
+		return nil, err
+	}
+
+	return pushResult.Rejected, nil
 }

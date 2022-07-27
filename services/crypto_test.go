@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"crypto/x509"
@@ -60,7 +60,7 @@ p7QU3jhJp/OJJtW1v6B0/gAuR7ahVlSBONEgNVk27mbkuCvVKqsvfiEp/MVNZuK+
 iKxtsCzTt5xLBO6DXdtI0nJ7/+Fug0RokpQdpEeM8R6njfv4L1OXy4P+sGkIhFK0
 rtAgzdgviZVHuGzksv9hBmWCM8klAuOWhwj/FogM4/YJtYf6u35Lm+WK4Mw=
 -----END RSA PRIVATE KEY-----`
-	publicKey=`-----BEGIN PUBLIC KEY-----
+	publicKey = `-----BEGIN PUBLIC KEY-----
 MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAy20zM0kP+kjsDJYY/FHY
 oHDWdQNcdchYTv41KoMVJlBkLoLSEGbgCwD2G5Ow1el+o/GUvyWfWMy/tdtkZY9H
 vWkCT9hZeB/yF8CCgo78vneDvM8zS8E0Lf3RTmTFcKEQw3IYW7KllOK4hcv/ATPE
@@ -84,7 +84,7 @@ func TestMarshalToPemPublicKey(t *testing.T) {
 	privK, err := x509.ParsePKCS1PrivateKey(b.Bytes)
 	require.NoError(t, err)
 
-	cr, err := NewCryptographerService(privK)
+	cr, err := NewCryptoService(privK)
 	require.NoError(t, err)
 
 	pemPk, err := cr.MarshalPubKeyToPem()

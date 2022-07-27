@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"
 
-	"github.com/iden3/signed-notification/pkg/rest/handlers"
+	"github.com/iden3/notification-service/rest/handlers"
 )
 
 // Handlers server handlers
@@ -37,8 +37,10 @@ func (s *Handlers) Routes() chi.Router {
 		}{Status: "up and running"})
 	})
 
-	r.Post("/_matrix/push/v1/notify", s.proxyHandler.ProxyNotification)
-	r.Get("/public_key", s.keyHandler.GetPublicKey)
+	r.Post("/api/v1/", s.proxyHandler.ProxyNotification)
+	r.Get("/api/v1/{id}", s.proxyHandler.GetNotification)
+
+	r.Get("/api/v1/public", s.keyHandler.GetPublicKey)
 
 	return r
 }

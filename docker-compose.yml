@@ -2,7 +2,7 @@ version: '3.1'
 services:
 
   ppg:
-    image: ghcr.io/iden3/ppg:main
+    image: ghcr.io/iden3/ppg:develop
     restart: always
     environment:
       SERVER_HOST: "${SERVER_HOST}"

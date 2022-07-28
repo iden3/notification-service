@@ -15,7 +15,6 @@ to start use docker-compose file.
 **REDIS_URL** - URL to Redis instance. Redis is used for temporary cache of schemas.<br />
 **REDIS_PASSWORD** - Redis password.<br />
 **GATEWAY_HOST** - URL to sygnal matrix instance <br />
-**IPFS_URL** - URL to IPFS node. Uses for schema fetch and upload.<br />
 **PRIVATE_KEY** - Encryption key.<br />
 
 ### Not required:

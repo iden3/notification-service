@@ -1,9 +1,9 @@
-name: Publish issuer
+name: publish
 on:
   workflow_dispatch:
 
 jobs:
-  build_issuer:
+  build_pgg:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

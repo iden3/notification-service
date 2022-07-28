@@ -1,6 +1,26 @@
 version: '3.1'
 services:
 
+  ppg:
+    image: ghcr.io/iden3/ppg:main
+    restart: always
+    environment:
+      SERVER_HOST: "${SERVER_HOST}"
+      SERVER_PORT: "${SERVER_PORT}"
+      REDIS_URL: "http://redis:6379"
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      GATEWAY_HOST: "http://sygnal:5000"
+      LOG_ENV: "${LOG_ENV}"
+      LOG_LEVEL: "${LOG_LEVEL}"
+      PRIVATE_KEY: "${PRIVATE_KEY}"
+    ports:
+      - 8080:8085
+    networks:
+      - ppg_network
+    depends_on:
+      - redis
+      - sygnal
+
   redis:
     image: redis
     ports:

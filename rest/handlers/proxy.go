@@ -13,36 +13,33 @@ import (
 	"github.com/iden3/notification-service/rest/utils"
 )
 
-// ProxyHandler for sending and fetching push notifications
-type ProxyHandler struct {
-	proxyService   proxyService
-	cachingService cachingService
+// PushNotificationHandler for sending and fetching push notifications
+type PushNotificationHandler struct {
+	notificationService notificationService
+	cachingService      cachingService
 }
-type proxyService interface {
-	SendNotification(ctx context.Context, msg *services.Message) ([]services.NotificationResult, error)
+type notificationService interface {
+	SendNotification(ctx context.Context, msg *services.Message) []services.NotificationResult
 }
 type cachingService interface {
 	Get(ctx context.Context, key string) (interface{}, error)
 }
 
-// NewProxyHandler create new instance of proxy
-func NewProxyHandler(s proxyService, cs cachingService) *ProxyHandler {
-	return &ProxyHandler{proxyService: s, cachingService: cs}
+// NewPushNotificationHandler create new instance of proxy
+func NewPushNotificationHandler(s notificationService, cs cachingService) *PushNotificationHandler {
+	return &PushNotificationHandler{notificationService: s, cachingService: cs}
 }
 
-// ProxyNotification proxy notification to matrix sygnal gateway
-func (h *ProxyHandler) ProxyNotification(w http.ResponseWriter, r *http.Request) {
+// Send proxy notification to matrix sygnal gateway
+func (h *PushNotificationHandler) Send(w http.ResponseWriter, r *http.Request) {
 	var cReq services.Message
 	if err := render.DecodeJSON(r.Body, &cReq); err != nil {
 		utils.ErrorJSON(w, r, http.StatusBadRequest, err, "can't bind request", 0)
 		return
 	}
 
-	resp, err := h.proxyService.SendNotification(r.Context(), &cReq)
-	if err != nil {
-		utils.ErrorJSON(w, r, http.StatusInternalServerError, err, "failed proxy notification", 0)
-		return
-	}
+	resp := h.notificationService.SendNotification(r.Context(), &cReq)
+
 	respBytes, err := json.Marshal(resp)
 	if err != nil {
 		utils.ErrorJSON(w, r, http.StatusInternalServerError, err, "failed proxy notification", 0)
@@ -55,8 +52,8 @@ func (h *ProxyHandler) ProxyNotification(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-// GetNotification returns notification by identifier
-func (h *ProxyHandler) GetNotification(w http.ResponseWriter, r *http.Request) {
+// Get returns notification by identifier
+func (h *PushNotificationHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	idParam := chi.URLParam(r, "id")
 	if idParam == "" {

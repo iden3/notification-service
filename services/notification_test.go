@@ -48,7 +48,7 @@ func (r RedisMock) Set(ctx context.Context, key string, value interface{}, durat
 func (r RedisMock) Get(ctx context.Context, key string) (interface{}, error) {
 	return nil, nil
 }
-func TestProxy(t *testing.T) {
+func TestNotificationService_SendNotification(t *testing.T) {
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	require.NoError(t, err)
@@ -58,11 +58,11 @@ func TestProxy(t *testing.T) {
 
 	signal := signalSuccessMock(t)
 	defer signal.Close()
-	notificationClient := NewNotificationClient(http.DefaultClient, signal.URL)
+	notificationClient := NewPushClient(http.DefaultClient, signal.URL)
 	redisMock := RedisMock{}
 
 	// mock signal with http_test.
-	proxy := NewProxyService(notificationClient, cs, redisMock, "host")
+	notificationService := NewNotificationService(notificationClient, cs, redisMock, "host")
 
 	device := Device{
 		AppID:   "local.id",
@@ -71,7 +71,7 @@ func TestProxy(t *testing.T) {
 	encodedDevice, err := json.Marshal(device)
 	require.NoError(t, err)
 
-	ciphertext, err := proxy.cryptoService.Encrypt(encodedDevice)
+	ciphertext, err := notificationService.cryptoService.Encrypt(encodedDevice)
 	require.NoError(t, err)
 
 	msg := &Message{
@@ -89,13 +89,12 @@ func TestProxy(t *testing.T) {
 		},
 	}
 
-	res, err := proxy.SendNotification(context.Background(), msg)
-	require.NoError(t, err)
+	res := notificationService.SendNotification(context.Background(), msg)
 	require.Len(t, res, 1)
 	require.Equal(t, NotificationStatusSuccess, res[0].Status)
 
 }
-func TestProxyRejected(t *testing.T) {
+func TestNotificationService_SendNotificationRejected(t *testing.T) {
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	require.NoError(t, err)
@@ -105,11 +104,11 @@ func TestProxyRejected(t *testing.T) {
 
 	signal := signalRejectedMock(t)
 	defer signal.Close()
-	notificationClient := NewNotificationClient(http.DefaultClient, signal.URL)
+	notificationClient := NewPushClient(http.DefaultClient, signal.URL)
 	redisMock := RedisMock{}
 
 	// mock signal with http_test.
-	proxy := NewProxyService(notificationClient, cs, redisMock, "host")
+	proxy := NewNotificationService(notificationClient, cs, redisMock, "host")
 
 	device := Device{
 		AppID:   "local.id",
@@ -136,13 +135,12 @@ func TestProxyRejected(t *testing.T) {
 		},
 	}
 
-	res, err := proxy.SendNotification(context.Background(), msg)
-	require.NoError(t, err)
+	res := proxy.SendNotification(context.Background(), msg)
 	require.Len(t, res, 1)
 	require.Equal(t, NotificationStatusRejected, res[0].Status)
 
 }
-func TestProxyFailed(t *testing.T) {
+func TestNotificationService_SendNotificationFailed(t *testing.T) {
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	require.NoError(t, err)
@@ -152,11 +150,11 @@ func TestProxyFailed(t *testing.T) {
 
 	signal := signalRejectedMock(t)
 	defer signal.Close()
-	notificationClient := NewNotificationClient(http.DefaultClient, signal.URL)
+	notificationClient := NewPushClient(http.DefaultClient, signal.URL)
 	redisMock := RedisMock{}
 
 	// mock signal with http_test.
-	proxy := NewProxyService(notificationClient, cs, redisMock, "host")
+	proxy := NewNotificationService(notificationClient, cs, redisMock, "host")
 
 	msg := &Message{
 		Content: Content{
@@ -173,8 +171,7 @@ func TestProxyFailed(t *testing.T) {
 		},
 	}
 
-	res, err := proxy.SendNotification(context.Background(), msg)
-	require.NoError(t, err)
+	res := proxy.SendNotification(context.Background(), msg)
 	require.Len(t, res, 1)
 	require.Equal(t, NotificationStatusFailed, res[0].Status)
 	require.Equal(t, "service couldn't decrypt the device token", res[0].Reason)

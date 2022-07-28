@@ -12,12 +12,12 @@ import (
 
 // Handlers server handlers
 type Handlers struct {
-	proxyHandler *handlers.ProxyHandler
+	proxyHandler *handlers.PushNotificationHandler
 	keyHandler   *handlers.KeyHandler
 }
 
 // NewHandlers create handlers.
-func NewHandlers(p *handlers.ProxyHandler, k *handlers.KeyHandler) *Handlers {
+func NewHandlers(p *handlers.PushNotificationHandler, k *handlers.KeyHandler) *Handlers {
 	return &Handlers{
 		proxyHandler: p,
 		keyHandler:   k,
@@ -37,8 +37,8 @@ func (s *Handlers) Routes() chi.Router {
 		}{Status: "up and running"})
 	})
 
-	r.Post("/api/v1/", s.proxyHandler.ProxyNotification)
-	r.Get("/api/v1/{id}", s.proxyHandler.GetNotification)
+	r.Post("/api/v1/", s.proxyHandler.Send)
+	r.Get("/api/v1/{id}", s.proxyHandler.Get)
 
 	r.Get("/api/v1/public", s.keyHandler.GetPublicKey)
 

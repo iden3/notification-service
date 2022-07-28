@@ -11,10 +11,10 @@ import (
 	"time"
 )
 
-// Message is a structure of message to accept from sender
-type Message struct {
-	Content      Content      `json:"content"`
-	PushMetadata PushMetadata `json:"metadata"`
+// PushNotification is a structure of message to accept from sender
+type PushNotification struct {
+	Message      json.RawMessage `json:"message"`
+	PushMetadata PushMetadata    `json:"metadata"`
 }
 
 // PushMetadata is an array of  encrypted devices info
@@ -63,7 +63,7 @@ func NewNotificationService(n *PushClient, c cryptoService, cs cachingService, h
 }
 
 // SendNotification sends notification to matrix gateway
-func (ns *Notification) SendNotification(ctx context.Context, msg *Message) []NotificationResult {
+func (ns *Notification) SendNotification(ctx context.Context, msg *PushNotification) []NotificationResult {
 
 	msgProcessingResult := make([]NotificationResult, 0)
 
@@ -149,13 +149,12 @@ func (ns *Notification) decryptDeviceInfo(enc EncryptedDeviceMetadata) (Device, 
 	return device, nil
 
 }
-func (ns *Notification) notify(ctx context.Context, msg *Message, devices []Device) ([]string, error) {
+func (ns *Notification) notify(ctx context.Context, push *PushNotification, devices []Device) ([]string, error) {
 
-	msgToSend := msg.Content.Body
 	id := uuid.NewString()
 
 	// save a message to a caching service
-	err := ns.cachingService.Set(ctx, id, msgToSend, time.Hour*24)
+	err := ns.cachingService.Set(ctx, id, push.Message, time.Hour*24)
 	if err != nil {
 		log.Error(err)
 		return nil, errors.New("failed to notify devices")

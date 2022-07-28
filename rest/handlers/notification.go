@@ -19,7 +19,7 @@ type PushNotificationHandler struct {
 	cachingService      cachingService
 }
 type notificationService interface {
-	SendNotification(ctx context.Context, msg *services.Message) []services.NotificationResult
+	SendNotification(ctx context.Context, msg *services.PushNotification) []services.NotificationResult
 }
 type cachingService interface {
 	Get(ctx context.Context, key string) (interface{}, error)
@@ -32,7 +32,7 @@ func NewPushNotificationHandler(s notificationService, cs cachingService) *PushN
 
 // Send proxy notification to matrix sygnal gateway
 func (h *PushNotificationHandler) Send(w http.ResponseWriter, r *http.Request) {
-	var cReq services.Message
+	var cReq services.PushNotification
 	if err := render.DecodeJSON(r.Body, &cReq); err != nil {
 		utils.ErrorJSON(w, r, http.StatusBadRequest, err, "can't bind request", 0)
 		return

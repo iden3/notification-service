@@ -14,7 +14,7 @@ import (
 
 const (
 	// list of supported algorithms.
-	rsaAlg = "rsa"
+	rsaAlg = "RS512"
 )
 
 // Crypto is a service to encrypt and decrypt device data with a presetup key

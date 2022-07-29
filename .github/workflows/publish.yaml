@@ -17,10 +17,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get current branch name
-        id: branch-name
-        uses: tj-actions/branch-names@v5
-
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1

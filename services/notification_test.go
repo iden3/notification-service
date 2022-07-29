@@ -80,7 +80,7 @@ func TestNotificationService_SendNotification(t *testing.T) {
 			Devices: []EncryptedDeviceMetadata{
 				{
 					Ciphertext: base64.StdEncoding.EncodeToString(ciphertext),
-					Alg:        "rsa",
+					Alg:        "RS512",
 				},
 			},
 		},
@@ -123,7 +123,7 @@ func TestNotificationService_SendNotificationRejected(t *testing.T) {
 			Devices: []EncryptedDeviceMetadata{
 				{
 					Ciphertext: base64.StdEncoding.EncodeToString(ciphertext),
-					Alg:        "rsa",
+					Alg:        "RS512",
 				},
 			},
 		},
@@ -156,7 +156,7 @@ func TestNotificationService_SendNotificationFailed(t *testing.T) {
 			Devices: []EncryptedDeviceMetadata{
 				{
 					Ciphertext: base64.StdEncoding.EncodeToString([]byte("mockedInvalidCipherText")),
-					Alg:        "rsa",
+					Alg:        "RS512",
 				},
 			},
 		},

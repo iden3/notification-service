@@ -162,7 +162,7 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 	err = ns.cachingService.Set(ctx, id, bytesToSave, time.Hour*24)
 	if err != nil {
 		log.Error(err)
-		return nil, errors.New("failed to save device notification.")
+		return nil, errors.New("failed to save device notification")
 	}
 	contentBody := struct {
 		ID  string `json:"id"`

@@ -75,17 +75,17 @@ func (c *PushClient) SendPush(ctx context.Context, listDevices []Device, content
 
 	reqBody, err := json.Marshal(reqData)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 
 	notifyRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, c.url, bytes.NewBuffer(reqBody))
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 
 	respBody, err := c.conn.Do(notifyRequest)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 	defer respBody.Body.Close()
 

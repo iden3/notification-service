@@ -66,18 +66,10 @@ func (h *PushNotificationHandler) Get(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorJSON(w, r, http.StatusInternalServerError, err, "failed to get notification", 0)
 		return
 	}
-	if resp == nil {
+	if resp == nil || len(resp.([]byte)) == 0 {
 		utils.ErrorJSON(w, r, http.StatusNotFound, errors.New("notification not found"), "expired", 0)
 		return
 	}
-	respBytes, err := json.Marshal(resp)
-	if err != nil {
-		utils.ErrorJSON(w, r, http.StatusInternalServerError, err, "failed to pack notification message", 0)
-		return
-	}
-	w.Header().Add("Content-type", "application/json")
-	_, err = w.Write(respBytes)
-	if err != nil {
-		log.Warn("failed write response:", err)
-	}
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, resp)
 }

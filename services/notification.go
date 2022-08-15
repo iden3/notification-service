@@ -172,14 +172,15 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 		URL: fmt.Sprintf("%s/api/v1/%s", ns.hostURL, id),
 	}
 
-	rawContentBody, err := json.Marshal(contentBody)
+	_, err = json.Marshal(contentBody)
 
 	if err != nil {
 		log.Error(err)
 		return nil, errors.New("failed to notify devices")
 	}
+	temporarMessage := []byte("Illya's proposal")
 	c := Content{
-		Body:    rawContentBody,
+		Body:    temporarMessage,
 		MsgType: "type/json",
 	}
 	rejectedTokens, err := ns.notification.SendPush(ctx, devices, c)

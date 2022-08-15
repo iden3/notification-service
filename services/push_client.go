@@ -39,8 +39,8 @@ type Device struct {
 
 // Content for matrix message
 type Content struct {
-	Body    json.RawMessage `json:"body"`
-	MsgType string          `json:"msgtype"`
+	Title string          `json:"title"`
+	Body  json.RawMessage `json:"body"`
 }
 
 // PushClient to send push to matrix

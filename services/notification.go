@@ -180,8 +180,8 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 	}
 
 	c := Content{
-		Title: "ppg test",
-		Body:  rawContentBody,
+		MsgType: "application/json",
+		Body:    rawContentBody,
 	}
 	rejectedTokens, err := ns.notification.SendPush(ctx, devices, c)
 	if err != nil {

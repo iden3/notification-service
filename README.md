@@ -60,13 +60,13 @@ to start use docker-compose file.
      x_forwarded_for: false
 
    http:
-    bind_addresses: ['0.0.0.0']
-    port: 5000
+     bind_addresses: ['0.0.0.0']
+     port: 5000
 
    apps:
-    polygon.web:
-     type: gcm
-     api_key: "AAAALiwHn80:APA91bHT-W2UbhGWricsvxOLCjTj-7CtcsZIXRiXCbN-rziy3NgBKak4Ngq3iM3Qo8c2s3AXu0OKzui6zMu009nH5r5IWRJndq0RNTLL8bMbNBWf_Mh1GcuXWF1dNiTMCcB7ccYR-ocu"
+     polygon.web:
+       type: gcm
+       api_key: "AAAALiwHn80:APA91bHT-W2UbhGWricsvxOLCjTj-7CtcsZIXRiXCbN-rziy3NgBKak4Ngq3iM3Qo8c2s3AXu0OKzui6zMu009nH5r5IWRJndq0RNTLL8bMbNBWf_Mh1GcuXWF1dNiTMCcB7ccYR-ocu"
     ```
    **apps** - list of apps. You can add more apps.<br/>
    **apps.polygon.web** - is name of app. You can change it to any name.<br/>

@@ -7,7 +7,7 @@ services:
     environment:
       SERVER_HOST: "${SERVER_HOST:-localhost}"
       SERVER_PORT: "${SERVER_PORT:-8085}"
-      REDIS_URL: "http://redis:6379"
+      REDIS_URL: "redis:6379"
       REDIS_PASSWORD: "${REDIS_PASSWORD:-secret}"
       GATEWAY_HOST: "http://sygnal:5000"
       LOG_ENV: "${LOG_ENV}"

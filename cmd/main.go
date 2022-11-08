@@ -27,12 +27,17 @@ func main() {
 	if b == nil {
 		log.Fatal("failed decode pem format")
 	}
-	privK, err := x509.ParsePKCS1PrivateKey(b.Bytes)
+
+	var privKey interface{}
+	privKey, err = x509.ParsePKCS8PrivateKey(b.Bytes)
 	if err != nil {
-		log.Fatal("failed decode private key:", err)
+		privKey, err = x509.ParsePKCS1PrivateKey(b.Bytes)
+		if err != nil {
+			log.Fatal("failed decode private key:", err)
+		}
 	}
 
-	cryptoService, err := services.NewCryptoService(privK)
+	cryptoService, err := services.NewCryptoService(privKey)
 	if err != nil {
 		log.Fatal("failed init crypto service:", err)
 	}

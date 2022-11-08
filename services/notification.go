@@ -153,8 +153,13 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 
 	id := uuid.NewString()
 
+	bytesToSave, err := json.Marshal(push.Message)
+	if err != nil {
+		return nil, errors.New("failed to prepare notification")
+
+	}
 	// save a message to a caching service
-	err := ns.cachingService.Set(ctx, id, []byte(push.Message), time.Hour*24)
+	err = ns.cachingService.Set(ctx, id, bytesToSave, time.Hour*24)
 	if err != nil {
 		log.Error(err)
 		return nil, errors.New("failed to save device notification")
@@ -173,7 +178,6 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 		log.Error(err)
 		return nil, errors.New("failed to notify devices")
 	}
-
 	c := Content{
 		Body: rawContentBody,
 	}

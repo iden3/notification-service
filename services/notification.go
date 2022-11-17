@@ -179,8 +179,7 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 		return nil, errors.New("failed to notify devices")
 	}
 	c := Content{
-		Body:    rawContentBody,
-		MsgType: "type/json",
+		Body: rawContentBody,
 	}
 	rejectedTokens, err := ns.notification.SendPush(ctx, devices, c)
 	if err != nil {

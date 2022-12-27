@@ -12,6 +12,7 @@ import (
 	"github.com/iden3/notification-service/services"
 	"github.com/pkg/errors"
 	"net/http"
+	"os"
 )
 
 func main() {
@@ -23,7 +24,16 @@ func main() {
 	// set log level from config
 	log.SetLevelStr(cfg.Log.Level)
 
-	b, _ := pem.Decode([]byte(cfg.PrivateKey))
+	var b *pem.Block
+	b, _ = pem.Decode([]byte(cfg.PrivateKey))
+
+	if cfg.PrivateKeyPath != "" && b == nil {
+		fileContent, err := os.ReadFile(cfg.PrivateKeyPath)
+		if err != nil {
+			log.Fatal("failed open file with pem content")
+		}
+		b, _ = pem.Decode(fileContent)
+	}
 	if b == nil {
 		log.Fatal("failed decode pem format")
 	}

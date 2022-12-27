@@ -66,10 +66,15 @@ func (h *PushNotificationHandler) Get(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorJSON(w, r, http.StatusInternalServerError, err, "failed to get notification", 0)
 		return
 	}
-	if resp == nil || len(resp.([]byte)) == 0 {
+	if resp == nil {
 		utils.ErrorJSON(w, r, http.StatusNotFound, errors.New("notification not found"), "expired", 0)
 		return
 	}
+	msg, ok := resp.(string)
+	if !ok {
+		utils.ErrorJSON(w, r, http.StatusNotFound, errors.New("invalid message from redis"), "error", 0)
+		return
+	}
 	render.Status(r, http.StatusOK)
-	render.JSON(w, r, resp)
+	render.JSON(w, r, json.RawMessage(msg))
 }

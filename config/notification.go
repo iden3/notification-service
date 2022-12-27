@@ -2,11 +2,12 @@ package config
 
 // NotificationService is a config for notification service
 type NotificationService struct {
-	Server     Server  `envconfig:"SERVER"`
-	Gateway    Gateway `envconfig:"GATEWAY"`
-	Redis      Redis   `envconfig:"REDIS"`
-	Log        Log     `envconfig:"LOG"`
-	PrivateKey string  `envconfig:"PRIVATE_KEY" require:"true"`
+	Server         Server  `envconfig:"SERVER"`
+	Gateway        Gateway `envconfig:"GATEWAY"`
+	Redis          Redis   `envconfig:"REDIS"`
+	Log            Log     `envconfig:"LOG"`
+	PrivateKey     string  `envconfig:"PRIVATE_KEY" require:"true"`
+	PrivateKeyPath string  `envconfig:"PRIVATE_KEY_PATH"`
 }
 
 // Log config for Log.

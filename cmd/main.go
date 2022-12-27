@@ -61,7 +61,7 @@ func main() {
 
 	cachingService := services.NewRedisCacheService(redisClient)
 	notificationClient := services.NewPushClient(c, cfg.Gateway.Host)
-	notificationService := services.NewNotificationService(notificationClient, cryptoService, cachingService, cfg.Server.Host)
+	notificationService := services.NewNotificationService(notificationClient, cryptoService, cachingService, cfg.Server.Address())
 
 	h := rest.NewHandlers(handlers.NewPushNotificationHandler(notificationService, cachingService), handlers.NewKeyHandler(cryptoService))
 	r := h.Routes()

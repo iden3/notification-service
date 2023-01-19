@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/pkg/errors"
@@ -33,7 +34,9 @@ func (s *Server) Close(ctx context.Context) error {
 func (s *Server) Run(port int) error {
 	log.Infof("Server starting on port %d", port)
 	s.httpServer = &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
-		Handler: s.Routes}
+		Addr:              fmt.Sprintf(":%d", port),
+		Handler:           s.Routes,
+		ReadHeaderTimeout: time.Second,
+	}
 	return errors.WithStack(s.httpServer.ListenAndServe())
 }

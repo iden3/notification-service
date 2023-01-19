@@ -69,7 +69,7 @@ func (ns *Notification) SendNotification(ctx context.Context, msg *PushNotificat
 
 	decryptedMap := make(map[string]EncryptedDeviceMetadata)
 
-	devices := make([]Device, 0) //
+	devices := make([]Device, 0)
 
 	for _, encDeviceInfo := range msg.PushMetadata.Devices {
 

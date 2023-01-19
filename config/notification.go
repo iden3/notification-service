@@ -1,12 +1,15 @@
 package config
 
+import "fmt"
+
 // NotificationService is a config for notification service
 type NotificationService struct {
-	Server     Server  `envconfig:"SERVER"`
-	Gateway    Gateway `envconfig:"GATEWAY"`
-	Redis      Redis   `envconfig:"REDIS"`
-	Log        Log     `envconfig:"LOG"`
-	PrivateKey string  `envconfig:"PRIVATE_KEY" require:"true"`
+	Server         Server  `envconfig:"SERVER"`
+	Gateway        Gateway `envconfig:"GATEWAY"`
+	Redis          Redis   `envconfig:"REDIS"`
+	Log            Log     `envconfig:"LOG"`
+	PrivateKey     string  `envconfig:"PRIVATE_KEY" require:"true"`
+	PrivateKeyPath string  `envconfig:"PRIVATE_KEY_PATH"`
 }
 
 // Log config for Log.
@@ -17,8 +20,14 @@ type Log struct {
 
 // Server config of issuer.
 type Server struct {
-	Host string `envconfig:"HOST" require:"true"`
-	Port int    `envconfig:"PORT" default:"8085"`
+	Protocol string `envconfig:"PROTOCOL" default:"https"`
+	Host     string `envconfig:"HOST" require:"true"`
+	Port     int    `envconfig:"PORT" default:"8085"`
+}
+
+// Address return agent address.
+func (s Server) Address() string {
+	return fmt.Sprintf("%s://%s:%d", s.Protocol, s.Host, s.Port)
 }
 
 // Gateway is public gateway config

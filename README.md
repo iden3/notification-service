@@ -66,7 +66,7 @@ to start use docker-compose file.
    apps:
      polygon.web:
        type: gcm
-       api_key: "AAAALiwHn80:APA91bHT-W2UbhGWricsvxOLCjTj-7CtcsZIXRiXCbN-rziy3NgBKak4Ngq3iM3Qo8c2s3AXu0OKzui6zMu009nH5r5IWRJndq0RNTLL8bMbNBWf_Mh1GcuXWF1dNiTMCcB7ccYR-ocu"
+       api_key: "AAAALiwHn80:...Mh1GcuXWF1dNiTMCcB7ccYR-ocu"
     ```
    **apps** - list of apps. You can add more apps.<br/>
    **apps.polygon.web** - is name of app. You can change it to any name.<br/>
@@ -85,7 +85,7 @@ to start use docker-compose file.
     ```json
     {
       "app_id":"polygon.web",
-      "pushkey":"fIZEYtbI8LJ-Og8xuSJk8R:APA91bHzZOuq1Po_m3qhsP3gje1K9XOyk-RpoYgAQbC7Oa3lZGmXg3AD45sdNmdwdSY5UnyYAFeCYZ0IqeDBwEi-tVGbfcmDZMbV5QpOavBxxSLoszn4sk8_tlNayCUHIy9O1hJFAuLZ"
+      "pushkey":"fIZEYtbI8LJ-Og8xuSJk8R:...tlNayCUHIy9O1hJFAuLZ"
     }
     ```
    **app_id** - name of app from sygnal config.<br/>

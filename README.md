@@ -38,7 +38,7 @@ to start use docker-compose file.
 4. Add required env variables (example):
    ```bash
     export GATEWAY_HOST="http://localhost:5000/"
-    export SERVER_HOST="localhost"
+    export SERVER_HOST="http://localhost:8080"
     export SERVER_PORT="8085"
     export REDIS_URL="localhost:6379"
     export REDIS_PASSWORD="secret"

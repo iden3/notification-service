@@ -3,6 +3,9 @@ package main
 import (
 	"crypto/x509"
 	"encoding/pem"
+	"net/http"
+	"os"
+
 	"github.com/go-redis/redis/v8"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/iden3/notification-service/config"
@@ -11,8 +14,6 @@ import (
 	"github.com/iden3/notification-service/rest/handlers"
 	"github.com/iden3/notification-service/services"
 	"github.com/pkg/errors"
-	"net/http"
-	"os"
 )
 
 func main() {
@@ -61,7 +62,7 @@ func main() {
 
 	cachingService := services.NewRedisCacheService(redisClient)
 	notificationClient := services.NewPushClient(c, cfg.Gateway.Host)
-	notificationService := services.NewNotificationService(notificationClient, cryptoService, cachingService, cfg.Server.Address())
+	notificationService := services.NewNotificationService(notificationClient, cryptoService, cachingService, cfg.Server.Host)
 
 	h := rest.NewHandlers(handlers.NewPushNotificationHandler(notificationService, cachingService), handlers.NewKeyHandler(cryptoService))
 	r := h.Routes()

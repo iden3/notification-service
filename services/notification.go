@@ -5,10 +5,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/iden3/notification-service/log"
 	"github.com/pkg/errors"
-	"time"
 )
 
 // PushNotification is a structure of message to accept from sender
@@ -169,7 +171,7 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 		URL string `json:"url"`
 	}{
 		ID:  id,
-		URL: fmt.Sprintf("%s/api/v1/%s", ns.hostURL, id),
+		URL: fmt.Sprintf("%s/api/v1/%s", strings.Trim(ns.hostURL, "/"), id),
 	}
 
 	rawContentBody, err := json.Marshal(contentBody)

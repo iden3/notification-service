@@ -67,11 +67,16 @@ to start use docker-compose file.
      polygon.web:
        type: gcm
        api_key: "AAAALiwHn80:...Mh1GcuXWF1dNiTMCcB7ccYR-ocu"
+       fcm_options:
+         content_available: true
+         mutable_content: true
     ```
    **apps** - list of apps. You can add more apps.<br/>
    **apps.polygon.web** - is name of app. You can change it to any name.<br/>
    **apps.app_name.type** - type of app. You can use `gcm` or `fcm` for android devices.<br/>
-   **apps.api_key** - api key for push notifications. You can get it from firebase console.<br/>
+   **apps.app_name.api_key** - api key for push notifications. You can get it from firebase console.<br/>
+   **apps.app_name.fcm_options.content_available** - enable/disable content in a notification message.<br/>
+   **apps.app_name.fcm_options.mutable_content** - enables the service extension on the receiving client to handle the image delivered in the payload.<br/>
 7. Run docker compose:
     ```bash
     docker-compose up -d

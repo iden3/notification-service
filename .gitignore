@@ -1,3 +1,9 @@
 .env
 .idea
+.vscode
+
 .sygnal/sygnal.yaml
+.sygnal/admin-sdk.json
+
+keypair.pem
+pub.pem

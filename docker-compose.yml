@@ -29,9 +29,10 @@ services:
       - ppg_network
 
   sygnal:
-    image: matrixdotorg/sygnal:v0.12.0
+    image: matrixdotorg/sygnal:v0.15.0
     volumes:
       - ./.sygnal/sygnal.yaml:/sygnal.yaml:ro # sygnal support configuration only with config file.
+      - ./.sygnal/admin-sdk.json:/admin-sdk.json:ro
     networks:
       - ppg_network
 

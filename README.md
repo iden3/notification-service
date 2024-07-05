@@ -82,38 +82,11 @@ to start use docker-compose file.
     docker-compose up -d
     ```
 ### Test
-1. Get the public key from the notification service and save it to `pub.pem` file
-    ```bash
-    curl http://localhost:8085/api/v1/public -o pub.pem
-    ```
-2. Create `test.json` file with next data:
-    ```json
-    {
-      "app_id":"polygon.web",
-      "pushkey":"fIZEYtbI8LJ-Og8xuSJk8R:...tlNayCUHIy9O1hJFAuLZ"
-    }
-    ```
-   **app_id** - name of app from sygnal config.<br/>
-   **pushkey** - token received by the application from firebase.<br/>
-3. Encrypt `test.json` with the public key was fetched from the notification service:
+1. Run the `send_notification.sh` script and pass the device token as the first parameter:
    ```bash
-    cat test.json | openssl pkeyutl -encrypt -pubin -inkey pub.pem -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:SHA512 | base64 -w0
-    ```
-4. Make http request to the notification service:
-   ```bash
-   curl --location --request POST 'http://localhost:8085/api/v1' \
-   --header 'Content-Type: application/json' \
-   --data-raw '{
-      "message": {"id":"fb112f36-ff8a-414b-bc1d-1fb13b534755"},
-      "metadata": {
-         "devices": [{
-         "ciphertext": "eEvJwHe08uvFqpeU6Ocr2Q5v3+NGjyPCthpIaiJw2/CL7/wAw06yFY0Pn0tLMzVW+ibN/OlH+TzfzEAC8VmzRNWC/98ZYd9t41ihsVwwBD6tYWt/FJE9ZixWhd7TKp7eUC+orTWewbk/JuySMxcOsVtPlKtj+nlqimxBXDc6Vzcgyd35k+EnZ5apQdfwec5cGXCBMV+pRXApACIXlLECl9+dYE7Dv0Zzyas5cC7JUdI9dht13fuElrvoPnacmZtIMefiS4zNxKJI/GvS6tYnoJC76zV3uYex96S5Bdo4ruuQOH7n9SGgqGNtR1H8LpqI0MO02SBfyW5I1CpJOPfeg3HnsZaddOut0A2CmLopUJyJVr9JIFMTNIbD3YoC2VQIbtAKlDcKJLpbqgnz6COBCV7WCtaHUCux7wddA4cvuvdXmUz1dSkBFVJF5ML6iOdC8b50YJpWnEF7h1c1TTJJSfGQge2CrPk5fF14TQQkB+fEjzJBryU9No8quG7FMF1aegeqrScY+C8ELllhubs1lzmJVNzQJnQyIbIB2aPEWa7Uhhdyg1yo/Dfw+Madrkwx9+YYF8LSRrr38Hm6OnwLCPxKlQZ/qDfnJDak7zpfjGAMq9TMkJ3YmIgMO4MljJqskruRFvwWKcRLhOer4NKr3tZv5wxE6KV/U+9SrmHjaR0=",
-         "alg": "RSA-OAEP-512"
-         }]
-      }
-   }'
+   ./send_notification.sh ccg01-AeoZLwC7a9HtMOc0...S4_5
    ```
-5. Example of success response:
+1. Example of success response:
    ```bash
    [
      {
@@ -126,4 +99,4 @@ to start use docker-compose file.
      }
    ]
    ```
-6. Mobile/web applications should get a notification from the notification service.
+1. Mobile/web applications should get a notification from the notification service.

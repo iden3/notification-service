@@ -1,12 +1,13 @@
 package main
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"net/http"
 	"os"
+	"time"
 
-	"github.com/go-redis/redis/v8"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/iden3/notification-service/config"
 	"github.com/iden3/notification-service/log"
@@ -14,6 +15,7 @@ import (
 	"github.com/iden3/notification-service/rest/handlers"
 	"github.com/iden3/notification-service/services"
 	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -55,10 +57,21 @@ func main() {
 
 	c := &http.Client{Transport: &retryablehttp.RoundTripper{}}
 
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     cfg.Redis.URL,
-		Password: cfg.Redis.Password,
-	})
+	redisOpts, err := redis.ParseURL(cfg.Redis.URL)
+	if err != nil {
+		log.Fatal("failed parse redis url:", err)
+	}
+	redisClient := redis.NewClient(redisOpts)
+	pingTimeout, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	defer cancel()
+	status := redisClient.Ping(pingTimeout)
+	err = status.Err()
+	if err != nil {
+		// Log the error and exit or handle it as required
+		log.Fatalf("Could not connect to Redis: %v", err)
+	} else {
+		log.Info("Connected to Redis")
+	}
 
 	cachingService := services.NewRedisCacheService(redisClient)
 	notificationClient := services.NewPushClient(c, cfg.Gateway.Host)

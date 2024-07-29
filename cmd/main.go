@@ -68,10 +68,10 @@ func main() {
 	err = status.Err()
 	if err != nil {
 		// Log the error and exit or handle it as required
-		log.Fatalf("Could not connect to Redis: %v", err)
-	} else {
-		log.Info("Connected to Redis")
+		log.Errorf("Could not connect to Redis: %v", err)
+		return
 	}
+	log.Info("Connected to Redis")
 
 	cachingService := services.NewRedisCacheService(redisClient)
 	notificationClient := services.NewPushClient(c, cfg.Gateway.Host)

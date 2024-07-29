@@ -7,8 +7,7 @@ services:
     environment:
       SERVER_HOST: "${SERVER_HOST:-localhost}"
       SERVER_PORT: "${SERVER_PORT:-8085}"
-      REDIS_URL: "redis:6379"
-      REDIS_PASSWORD: "${REDIS_PASSWORD:-secret}"
+      REDIS_URL: "redis://@redis:6379/1"
       GATEWAY_HOST: "http://sygnal:5000"
       LOG_ENV: "${LOG_ENV}"
       LOG_LEVEL: "${LOG_LEVEL}"
@@ -23,8 +22,6 @@ services:
 
   redis:
     image: redis
-    command: >
-      --requirepass "${REDIS_PASSWORD:-secret}"
     networks:
       - ppg_network
 

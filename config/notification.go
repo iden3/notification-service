@@ -29,6 +29,5 @@ type Gateway struct {
 
 // Redis config for Redis.
 type Redis struct {
-	URL      string `envconfig:"REDIS_URL" required:"true"`
-	Password string `envconfig:"PASSWORD" required:"true"`
+	URL string `envconfig:"REDIS_URL" required:"true"`
 }

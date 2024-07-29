@@ -13,7 +13,6 @@ to start use docker-compose file.
 
 **SERVER_HOST** - public URL to polygon push gateway. <br />
 **REDIS_URL** - URL to Redis instance. Redis is used for temporary cache of schemas.<br />
-**REDIS_PASSWORD** - Redis password.<br />
 **GATEWAY_HOST** - URL to sygnal matrix instance <br />
 **PRIVATE_KEY** - Encryption key.<br />
 
@@ -40,8 +39,7 @@ to start use docker-compose file.
     export GATEWAY_HOST="http://localhost:5000/"
     export SERVER_HOST="http://localhost:8080"
     export SERVER_PORT="8085"
-    export REDIS_URL="localhost:6379"
-    export REDIS_PASSWORD="secret"
+    export REDIS_URL="redis://username:userpassword@localhost:6379/1"
    ```
    GATEWAY_HOST - URL to `sygnal` instance. <br/>
 5. Read env variables:

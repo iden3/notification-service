@@ -41,11 +41,11 @@ func signalSuccessMock(t *testing.T) *httptest.Server {
 type RedisMock struct {
 }
 
-func (r RedisMock) Set(ctx context.Context, key string, value interface{}, duration time.Duration) error {
+func (r RedisMock) Set(_ context.Context, _ string, _ interface{}, _ time.Duration) error {
 	return nil
 }
 
-func (r RedisMock) Get(ctx context.Context, key string) (interface{}, error) {
+func (r RedisMock) Get(_ context.Context, _ string) (interface{}, error) {
 	return nil, nil
 }
 func TestNotificationService_SendNotification(t *testing.T) {

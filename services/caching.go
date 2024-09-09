@@ -3,8 +3,9 @@ package services
 import (
 	"context"
 	"errors"
-	"github.com/go-redis/redis/v8"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 const redisStatus = "PONG"

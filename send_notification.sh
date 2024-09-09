@@ -8,7 +8,7 @@ curl http://localhost:8085/api/v1/public -o pub.pem
 # app_id - name of app from sygnal config
 # pushkey - token received by the application from firebase
 encrypted_output=$(echo '{
-    "app_id":"polygon.web",
+    "app_id":"id.privado.wallet.dev",
     "pushkey":"'"$pushkey"'"
 }' | openssl pkeyutl -encrypt -pubin -inkey pub.pem -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:SHA512 | base64)
 

@@ -24,3 +24,35 @@ curl --location --request POST 'http://localhost:8085/api/v1' \
       }]
    }
 }' | jq .
+
+# Encrypt wit additional unique_id field
+# unique_id can be uset to get all notifications for a specific user
+encrypted_output_with_unique_id=$(echo '{
+    "app_id":"id.privado.wallet.dev",
+    "pushkey":"'"$pushkey"'",
+    "unique_id":"d2a3c243-8d1d-48f7-8fbe-031f57c1fe4a"
+}' | openssl pkeyutl -encrypt -pubin -inkey pub.pem -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:SHA512 | base64)
+
+curl --location --request POST 'http://localhost:8085/api/v1' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+   "message": {"id":"0130b8b3-26f4-43b4-bc71-768dd60522f0"},
+   "metadata": {
+      "devices": [{
+        "ciphertext": "'"$encrypted_output_with_unique_id"'",
+        "alg": "RSA-OAEP-512"
+      }]
+   }
+}' | jq .
+
+curl --location --request POST 'http://localhost:8085/api/v1' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+   "message": {"id":"0130b8b3-26f4-43b4-bc71-768dd60522f0", "body": {"en": "Hello, World!"}},
+   "metadata": {
+      "devices": [{
+        "ciphertext": "'"$encrypted_output_with_unique_id"'",
+        "alg": "RSA-OAEP-512"
+      }]
+   }
+}' | jq .

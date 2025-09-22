@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 // NotificationService is a config for notification service
 type NotificationService struct {
 	Server         Server  `envconfig:"SERVER"`
@@ -29,5 +31,6 @@ type Gateway struct {
 
 // Redis config for Redis.
 type Redis struct {
-	URL string `envconfig:"REDIS_URL" required:"true"`
+	URL                string        `envconfig:"REDIS_URL" required:"true"`
+	ExpirationDuration time.Duration `envconfig:"EXPIRATION_DURATION" default:"24h"`
 }

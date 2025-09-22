@@ -37,9 +37,10 @@ func (s *Handlers) Routes() chi.Router {
 		}{Status: "up and running"})
 	})
 	r.Route("/api/v1", func(api chi.Router) {
-		api.Get("/{id}", s.proxyHandler.Get)
 		api.Post("/", s.proxyHandler.Send)
 		api.Get("/public", s.keyHandler.GetPublicKey)
+		api.Get("/all/{id}", s.proxyHandler.GetAllMessagesByUniqueID)
+		api.Get("/{id}", s.proxyHandler.Get)
 	})
 
 	return r

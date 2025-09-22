@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/render"
-	"github.com/iden3/notification-service/services"
 	"net/http"
 
+	"github.com/go-chi/chi"
+	"github.com/go-chi/render"
 	"github.com/iden3/notification-service/log"
 	"github.com/iden3/notification-service/rest/utils"
+	"github.com/iden3/notification-service/services"
 )
 
 // PushNotificationHandler for sending and fetching push notifications
@@ -23,6 +23,8 @@ type notificationService interface {
 }
 type cachingService interface {
 	Get(ctx context.Context, key string) (interface{}, error)
+	GetAllByPrefix(ctx context.Context, prefix string) (values []interface{}, keys []string, err error)
+	Delete(ctx context.Context, keys ...string) error
 }
 
 // NewPushNotificationHandler create new instance of proxy
@@ -35,6 +37,10 @@ func (h *PushNotificationHandler) Send(w http.ResponseWriter, r *http.Request) {
 	var cReq services.PushNotification
 	if err := render.DecodeJSON(r.Body, &cReq); err != nil {
 		utils.ErrorJSON(w, r, http.StatusBadRequest, err, "can't bind request", 0)
+		return
+	}
+	if err := cReq.Validate(); err != nil {
+		utils.ErrorJSON(w, r, http.StatusBadRequest, err, "invalid request", 0)
 		return
 	}
 
@@ -76,5 +82,59 @@ func (h *PushNotificationHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	render.Status(r, http.StatusOK)
-	render.JSON(w, r, json.RawMessage(msg))
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if err := json.NewEncoder(w).Encode(json.RawMessage(msg)); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// delete key if everything is ok
+	if err := h.cachingService.Delete(r.Context(), idParam); err != nil {
+		log.Error("failed to delete key:", err, "key:", idParam)
+	}
+}
+
+// Get all message by uniqueID
+func (h *PushNotificationHandler) GetAllMessagesByUniqueID(w http.ResponseWriter, r *http.Request) {
+	uniqueID := chi.URLParam(r, "id")
+	if uniqueID == "" {
+		utils.ErrorJSON(w, r, http.StatusBadRequest,
+			errors.New("no id param"), "can't get notification id param", 0)
+		return
+	}
+
+	values, keys, err := h.cachingService.GetAllByPrefix(r.Context(), uniqueID)
+	if err != nil {
+		utils.ErrorJSON(w, r, http.StatusInternalServerError,
+			err, "failed to get notifications", 0)
+		return
+	}
+	if values == nil {
+		utils.ErrorJSON(w, r, http.StatusNotFound,
+			errors.New("notifications not found"), "expired", 0)
+		return
+	}
+
+	respStr := make([]json.RawMessage, 0, len(values))
+	for _, res := range values {
+		msg, ok := res.(string)
+		if !ok {
+			utils.ErrorJSON(w, r, http.StatusNotFound,
+				errors.New("invalid message from redis"), "error", 0)
+			return
+		}
+		respStr = append(respStr, json.RawMessage(msg))
+	}
+
+	render.Status(r, http.StatusOK)
+	// here we can't use render.JSON because we have to handler error in another way
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if err := json.NewEncoder(w).Encode(respStr); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// delete keys if everything is ok
+	if err := h.cachingService.Delete(r.Context(), keys...); err != nil {
+		log.Error("failed to delete keys:", err, "keys:", keys)
+	}
 }

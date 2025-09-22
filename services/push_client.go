@@ -33,8 +33,9 @@ const (
 
 // Device info
 type Device struct {
-	AppID   string `json:"app_id"`
-	Pushkey string `json:"pushkey"`
+	AppID    string `json:"app_id"`
+	Pushkey  string `json:"pushkey"`
+	UniqueID string `json:"unique_id"`
 }
 
 // Content for matrix message

@@ -62,7 +62,7 @@ func TestNotificationService_SendNotification(t *testing.T) {
 	redisMock := RedisMock{}
 
 	// mock signal with http_test.
-	notificationService := NewNotificationService(notificationClient, cs, redisMock, "host")
+	notificationService := NewNotificationService(notificationClient, cs, redisMock, "host", time.Hour*24)
 
 	device := Device{
 		AppID:   "local.id",
@@ -105,7 +105,7 @@ func TestNotificationService_SendNotificationRejected(t *testing.T) {
 	redisMock := RedisMock{}
 
 	// mock signal with http_test.
-	proxy := NewNotificationService(notificationClient, cs, redisMock, "host")
+	proxy := NewNotificationService(notificationClient, cs, redisMock, "host", time.Hour*24)
 
 	device := Device{
 		AppID:   "local.id",
@@ -148,7 +148,7 @@ func TestNotificationService_SendNotificationFailed(t *testing.T) {
 	redisMock := RedisMock{}
 
 	// mock signal with http_test.
-	proxy := NewNotificationService(notificationClient, cs, redisMock, "host")
+	proxy := NewNotificationService(notificationClient, cs, redisMock, "host", time.Hour*24)
 
 	msg := &PushNotification{
 		Message: []byte(`{"my_cat": "123321"}`),

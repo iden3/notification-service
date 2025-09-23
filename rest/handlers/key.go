@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"github.com/iden3/notification-service/services"
 	"net/http"
 
 	"github.com/iden3/notification-service/log"
 	"github.com/iden3/notification-service/rest/utils"
+	"github.com/iden3/notification-service/services"
 )
 
 // KeyHandler is a handler for ppg key info

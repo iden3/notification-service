@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/iden3/notification-service/log"
 	"github.com/pkg/errors"
 )
 
@@ -87,7 +88,13 @@ func (c *PushClient) SendPush(ctx context.Context, listDevices []Device, content
 	if err != nil {
 		return nil, err
 	}
-	defer respBody.Body.Close()
+	defer func() {
+		err := respBody.Body.Close()
+		if err != nil {
+			log.WithContext(ctx).
+				Warnf("error closing response body: %v", err)
+		}
+	}()
 
 	if respBody.StatusCode != http.StatusOK {
 		return nil, errors.New("can't send push notification")

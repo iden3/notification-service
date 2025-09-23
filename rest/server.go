@@ -7,9 +7,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/pkg/errors"
-
 	"github.com/iden3/notification-service/log"
+	"github.com/pkg/errors"
 )
 
 // Server app server

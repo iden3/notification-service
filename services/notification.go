@@ -174,7 +174,7 @@ func (ns *Notification) decryptDeviceInfo(enc EncryptedDeviceMetadata) (Device, 
 func (ns *Notification) notify(ctx context.Context, push *PushNotification, devices []Device) ([]string, error) {
 
 	id := uuid.NewString()
-	idToDevices := make(map[string][]Device, len(devices))
+	idToDevices := make(map[string][]Device)
 	for _, d := range devices {
 		key := buildMessageKey(d.UniqueID, id)
 		idToDevices[key] = append(idToDevices[key], d)
@@ -198,7 +198,7 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 		u, err := buildResourceURL(ns.hostURL, saveID)
 		if err != nil {
 			log.Error(err)
-			return nil, errors.New("failed to notify devices")
+			return nil, errors.New("failed to build notification URL")
 		}
 
 		contentBody := struct {

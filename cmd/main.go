@@ -13,6 +13,7 @@ import (
 	"github.com/iden3/notification-service/log"
 	"github.com/iden3/notification-service/rest"
 	"github.com/iden3/notification-service/rest/handlers"
+	"github.com/iden3/notification-service/rest/middleware"
 	"github.com/iden3/notification-service/services"
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
@@ -78,7 +79,16 @@ func main() {
 	notificationService := services.NewNotificationService(notificationClient, cryptoService,
 		cachingService, cfg.Server.Host, cfg.Redis.ExpirationDuration)
 
-	h := rest.NewHandlers(handlers.NewPushNotificationHandler(notificationService, cachingService), handlers.NewKeyHandler(cryptoService))
+	authmiddleware, err := setupAuthMiddleware(cfg)
+	if err != nil {
+		log.Fatal("failed to setup auth middleware:", err)
+	}
+
+	h := rest.NewHandlers(
+		handlers.NewPushNotificationHandler(notificationService, cachingService),
+		handlers.NewKeyHandler(cryptoService),
+		authmiddleware,
+	)
 	r := h.Routes()
 	server := rest.NewServer(r)
 	err = server.Run(cfg.Server.Port)
@@ -87,4 +97,19 @@ func main() {
 	} else if err != nil {
 		log.Errorf("HTTP server error: %v", err)
 	}
+}
+
+func setupAuthMiddleware(cfg *config.NotificationService) (func(http.Handler) http.Handler, error) {
+	stateResolvers, err := cfg.GetStateResolvers()
+	if err != nil {
+		return nil, err
+	}
+
+	opts := []middleware.JWZAuthOption{
+		middleware.WithStateTransitionDelay(cfg.AuthenticationMiddleware.StateTransitionDelay),
+		middleware.WithProofGenerationDelay(cfg.AuthenticationMiddleware.ProofGenerationDelay),
+		middleware.WithJWZGenerationDelay(cfg.AuthenticationMiddleware.JWZGenerationDelay),
+	}
+
+	return middleware.NewJWZAuthMiddleware(stateResolvers, opts...)
 }

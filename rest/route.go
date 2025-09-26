@@ -13,13 +13,19 @@ import (
 type Handlers struct {
 	proxyHandler *handlers.PushNotificationHandler
 	keyHandler   *handlers.KeyHandler
+
+	authmiddleware func(http.Handler) http.Handler
 }
 
 // NewHandlers create handlers.
-func NewHandlers(p *handlers.PushNotificationHandler, k *handlers.KeyHandler) *Handlers {
+func NewHandlers(
+	p *handlers.PushNotificationHandler,
+	k *handlers.KeyHandler,
+	a func(http.Handler) http.Handler) *Handlers {
 	return &Handlers{
-		proxyHandler: p,
-		keyHandler:   k,
+		proxyHandler:   p,
+		keyHandler:     k,
+		authmiddleware: a,
 	}
 }
 
@@ -38,7 +44,10 @@ func (s *Handlers) Routes() chi.Router {
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Post("/", s.proxyHandler.Send)
 		api.Get("/public", s.keyHandler.GetPublicKey)
-		api.Get("/all/{id}", s.proxyHandler.GetAllMessagesByUniqueID)
+
+		api.With(s.authmiddleware).
+			Get("/all", s.proxyHandler.GetAllMessagesByUniqueID)
+
 		api.Get("/{id}", s.proxyHandler.Get)
 	})
 

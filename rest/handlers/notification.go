@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	"github.com/iden3/notification-service/log"
+	"github.com/iden3/notification-service/rest/middleware"
 	"github.com/iden3/notification-service/rest/utils"
 	"github.com/iden3/notification-service/services"
 )
@@ -95,12 +96,12 @@ func (h *PushNotificationHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 // Get all message by uniqueID
 func (h *PushNotificationHandler) GetAllMessagesByUniqueID(w http.ResponseWriter, r *http.Request) {
-	uniqueID := chi.URLParam(r, "id")
-	if uniqueID == "" {
-		utils.ErrorJSON(w, r, http.StatusBadRequest,
-			errors.New("no id param"), "can't get notification id param", 0)
+	d, ok := middleware.GetDIDFromContext(r.Context())
+	if !ok || d.String() == "" {
+		utils.ErrorJSON(w, r, http.StatusBadRequest, errors.New("no uniqueID in context"), "can't  get uniqueID from context", 0)
 		return
 	}
+	uniqueID := d.String()
 
 	values, keys, err := h.cachingService.GetAllByPrefix(r.Context(), uniqueID)
 	if err != nil {

@@ -245,10 +245,6 @@ func buildMessageKey(uniqueID, id string) string {
 	return fmt.Sprintf("%s+%s", uniqueID, id)
 }
 
-func buildSearchKey(uniqueID string) string {
-	return fmt.Sprintf("%s+*", uniqueID)
-}
-
 func contains(a []string, x string) bool {
 	for _, n := range a {
 		if x == n {

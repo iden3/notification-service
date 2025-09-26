@@ -3,7 +3,7 @@ module github.com/iden3/notification-service
 go 1.24.2
 
 require (
-	github.com/go-chi/chi v1.5.4
+	github.com/go-chi/chi/v5 v5.2.3
 	github.com/go-chi/render v1.0.2
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-retryablehttp v0.7.2

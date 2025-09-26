@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -110,4 +111,8 @@ func (r RedisCache) Set(ctx context.Context, key string, value interface{}, dura
 		return err
 	}
 	return nil
+}
+
+func buildSearchKey(uniqueID string) string {
+	return fmt.Sprintf("%s+*", uniqueID)
 }

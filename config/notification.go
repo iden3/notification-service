@@ -29,10 +29,11 @@ func (n *NotificationService) GetStateResolvers() (map[string]pubsignals.StateRe
 	}{}
 
 	resolverFile, err := os.OpenFile(n.ResolversSettingsPath,
-		os.O_RDONLY, 0600)
+		os.O_RDONLY, 0o600)
 	if err != nil {
 		return nil, err
 	}
+	//nolint:errcheck // ignore close error
 	defer resolverFile.Close()
 
 	if err := yaml.NewDecoder(resolverFile).

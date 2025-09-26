@@ -32,6 +32,7 @@ func main() {
 	b, _ = pem.Decode([]byte(cfg.PrivateKey))
 
 	if cfg.PrivateKeyPath != "" && b == nil {
+		log.Info("loading private key from file:", cfg.PrivateKeyPath)
 		fileContent, err := os.ReadFile(cfg.PrivateKeyPath)
 		if err != nil {
 			log.Fatal("failed open file with pem content")
@@ -81,7 +82,8 @@ func main() {
 
 	authmiddleware, err := setupAuthMiddleware(cfg)
 	if err != nil {
-		log.Fatal("failed to setup auth middleware:", err)
+		log.Error("failed to setup auth middleware:", err)
+		return
 	}
 
 	h := rest.NewHandlers(

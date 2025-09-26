@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/iden3/notification-service/log"
 	"github.com/iden3/notification-service/rest/middleware"
@@ -127,7 +127,7 @@ func (h *PushNotificationHandler) GetAllMessagesByUniqueID(w http.ResponseWriter
 	}
 
 	render.Status(r, http.StatusOK)
-	// here we can't use render.JSON because we have to handler error in another way
+	// here we can't use render.JSON because we have to handle error in another way
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err := json.NewEncoder(w).Encode(respStr); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

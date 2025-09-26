@@ -1,6 +1,5 @@
-version: '3.1'
+version: "3.1"
 services:
-
   ppg:
     image: ghcr.io/iden3/ppg:develop
     restart: always
@@ -11,7 +10,11 @@ services:
       GATEWAY_HOST: "http://sygnal:5000"
       LOG_ENV: "${LOG_ENV}"
       LOG_LEVEL: "${LOG_LEVEL}"
-      PRIVATE_KEY: "${PRIVATE_KEY}"
+      PRIVATE_KEY_PATH: "/app/keypair.pem"
+      RESOLVERS_SETTINGS_PATH: "/app/resolvers.settings.yaml"
+    volumes:
+      - ./resolvers.settings.yaml:/app/resolvers.settings.yaml:ro
+      - ./keypair.pem:/app/keypair.pem:ro
     ports:
       - 8080:8085
     networks:

@@ -212,7 +212,7 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 		rawContentBody, err := json.Marshal(contentBody)
 		if err != nil {
 			log.Error(err)
-			return nil, errors.New("failed to notify devices")
+			return nil, errors.New("failed to marshal notification content")
 		}
 
 		c := Content{

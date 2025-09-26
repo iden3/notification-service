@@ -98,7 +98,7 @@ func (h *PushNotificationHandler) Get(w http.ResponseWriter, r *http.Request) {
 func (h *PushNotificationHandler) GetAllMessagesByUniqueID(w http.ResponseWriter, r *http.Request) {
 	d, ok := middleware.GetDIDFromContext(r.Context())
 	if !ok || d.String() == "" {
-		utils.ErrorJSON(w, r, http.StatusBadRequest, errors.New("no uniqueID in context"), "can't  get uniqueID from context", 0)
+		utils.ErrorJSON(w, r, http.StatusBadRequest, errors.New("no uniqueID in context"), "can't get uniqueID from context", 0)
 		return
 	}
 	uniqueID := d.String()

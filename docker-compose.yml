@@ -12,6 +12,7 @@ services:
       LOG_LEVEL: "${LOG_LEVEL}"
       PRIVATE_KEY_PATH: "/app/keypair.pem"
       RESOLVERS_SETTINGS_PATH: "/app/resolvers.settings.yaml"
+      AUTH_MIDDLEWARE_VERIFIER_DID: "did:iden3:readonly:tJ93RwaVfE2ZpnEqpZ7pF1z9G3DDFLDoZEyKRjEBZ"
     volumes:
       - ./resolvers.settings.yaml:/app/resolvers.settings.yaml:ro
       - ./keypair.pem:/app/keypair.pem:ro

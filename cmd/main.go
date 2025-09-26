@@ -32,7 +32,6 @@ func main() {
 	b, _ = pem.Decode([]byte(cfg.PrivateKey))
 
 	if cfg.PrivateKeyPath != "" && b == nil {
-		log.Info("loading private key from file:", cfg.PrivateKeyPath)
 		fileContent, err := os.ReadFile(cfg.PrivateKeyPath)
 		if err != nil {
 			log.Fatal("failed open file with pem content")
@@ -113,5 +112,6 @@ func setupAuthMiddleware(cfg *config.NotificationService) (func(http.Handler) ht
 		middleware.WithJWZGenerationDelay(cfg.AuthenticationMiddleware.JWZGenerationDelay),
 	}
 
-	return middleware.NewJWZAuthMiddleware(stateResolvers, opts...)
+	return middleware.NewJWZAuthMiddleware(stateResolvers,
+		cfg.AuthenticationMiddleware.VerifierDID, opts...)
 }

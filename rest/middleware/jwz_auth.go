@@ -19,7 +19,8 @@ import (
 )
 
 type jwzAuthMiddleware struct {
-	verifier *auth.Verifier
+	verifier    *auth.Verifier
+	verifierDID string
 
 	stateTransitionDelay time.Duration
 	proofGenerationDelay time.Duration
@@ -54,6 +55,7 @@ func WithJWZGenerationDelay(d time.Duration) JWZAuthOption {
 // provided via functional options; callers may omit them.
 func NewJWZAuthMiddleware(
 	resolver map[string]pubsignals.StateResolver,
+	verifierDID string,
 	opts ...JWZAuthOption,
 ) (func(http.Handler) http.Handler, error) {
 	v, err := auth.NewVerifier(
@@ -63,7 +65,10 @@ func NewJWZAuthMiddleware(
 	if err != nil {
 		return nil, err
 	}
-	m := &jwzAuthMiddleware{verifier: v}
+	m := &jwzAuthMiddleware{
+		verifier:    v,
+		verifierDID: verifierDID,
+	}
 	for _, opt := range opts {
 		if opt != nil {
 			opt(m)
@@ -109,7 +114,7 @@ func (v *jwzAuthMiddleware) JWZAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		if err := verifyTokenExparation(t, v.jwzGenerationDelay); err != nil {
+		if err := v.validateToken(t); err != nil {
 			http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
 			return
 		}
@@ -132,10 +137,37 @@ func (v *jwzAuthMiddleware) JWZAuth(next http.Handler) http.Handler {
 	})
 }
 
-func verifyTokenExparation(t *jwz.Token, expirationDuration time.Duration) error {
-	if expirationDuration == 0 {
+func (v *jwzAuthMiddleware) validateRecipient(msg *iden3comm.BasicMessage) error {
+	if msg.To != v.verifierDID {
+		return fmt.Errorf("invalid 'to' field in jwz, expected '%s', got '%s'",
+			v.verifierDID, msg.To)
+	}
+	return nil
+}
+
+func (v *jwzAuthMiddleware) validateExpiration(msg *iden3comm.BasicMessage) error {
+	if v.jwzGenerationDelay == 0 {
 		return nil
 	}
+
+	if msg.CreatedTime == nil {
+		return errors.New("missing created time in basic message")
+	}
+
+	createdAt := time.Unix(*msg.CreatedTime, 0)
+	tnow := time.Now().UTC()
+
+	if createdAt.After(tnow.Add(5 * time.Minute)) {
+		return errors.New("jwz has invalid created time in the future")
+	}
+
+	if createdAt.Add(v.jwzGenerationDelay).Before(tnow) {
+		return errors.New("jwz has expired")
+	}
+	return nil
+}
+
+func (v *jwzAuthMiddleware) validateToken(t *jwz.Token) error {
 	basicMessage := &iden3comm.BasicMessage{}
 	if err := json.Unmarshal(t.GetPayload(), basicMessage); err != nil {
 		return fmt.Errorf("failed to unmarshal basic message: %w", err)
@@ -146,19 +178,13 @@ func verifyTokenExparation(t *jwz.Token, expirationDuration time.Duration) error
 			protocol.AuthorizationResponseMessageType)
 	}
 
-	if basicMessage.CreatedTime == nil {
-		return errors.New("missing created time in basic message")
+	if err := v.validateRecipient(basicMessage); err != nil {
+		return err
 	}
 
-	createdAt := time.Unix(*basicMessage.CreatedTime, 0)
-	tnow := time.Now().UTC()
-
-	if createdAt.After(tnow.Add(5 * time.Minute)) {
-		return errors.New("jwz has invalid created time in the future")
+	if err := v.validateExpiration(basicMessage); err != nil {
+		return err
 	}
 
-	if createdAt.Add(expirationDuration).Before(tnow) {
-		return errors.New("jwz has expired")
-	}
 	return nil
 }

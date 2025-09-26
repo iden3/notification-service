@@ -82,6 +82,7 @@ type Redis struct {
 
 // AuthenticationMiddleware is config for auth middleware
 type AuthenticationMiddleware struct {
+	VerifierDID          string        `envconfig:"VERIFIER_DID" require:"true"`
 	StateTransitionDelay time.Duration `envconfig:"STATE_TRANSITION_DELAY"`
 	ProofGenerationDelay time.Duration `envconfig:"PROOF_GENERATION_DELAY"`
 	JWZGenerationDelay   time.Duration `envconfig:"JWZ_GENERATION_DELAY" default:"24h"` // Set 0 to disable jwz rotation

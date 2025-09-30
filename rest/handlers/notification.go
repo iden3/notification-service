@@ -109,21 +109,33 @@ func (h *PushNotificationHandler) GetAllMessagesByUniqueID(w http.ResponseWriter
 			err, "failed to get notifications", 0)
 		return
 	}
+
 	if values == nil {
 		utils.ErrorJSON(w, r, http.StatusNotFound,
 			errors.New("notifications not found"), "expired", 0)
 		return
 	}
 
-	respStr := make([]json.RawMessage, 0, len(values))
-	for _, res := range values {
-		msg, ok := res.(string)
+	if len(values) != len(keys) {
+		utils.ErrorJSON(w, r, http.StatusInternalServerError,
+			errors.New("invalid cache state"), "invalid cache state", 0)
+		return
+	}
+
+	type payload struct {
+		ID   string          `json:"id"`
+		Body json.RawMessage `json:"body"`
+	}
+
+	respStr := make([]payload, 0, len(keys))
+	for i := range keys {
+		msg, ok := values[i].(string)
 		if !ok {
 			utils.ErrorJSON(w, r, http.StatusNotFound,
 				errors.New("invalid message from redis"), "error", 0)
 			return
 		}
-		respStr = append(respStr, json.RawMessage(msg))
+		respStr = append(respStr, payload{keys[i], json.RawMessage(msg)})
 	}
 
 	render.Status(r, http.StatusOK)

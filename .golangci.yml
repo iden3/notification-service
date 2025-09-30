@@ -1,82 +1,62 @@
-service:
-  golangci-lint-version: 1.45.x
-
-run:
-  timeout: 2m
-  skip-dirs:
-    - vendor
-
-linters-settings:
-  govet:
-    check-shadowing: true
-  revive:
-    min-confidence: 0.1
-  maligned:
-    suggest-new: true
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  misspell:
-    locale: US
-  lll:
-    line-length: 140
-  gocritic:
-    enabled-tags:
-      - performance
-      - style
-      - experimental
-    disabled-checks:
-      - hugeParam
-
+version: "2"
 linters:
+  default: none
   enable:
     - bodyclose
-    - megacheck
-    - revive
-    - govet
-    - unconvert
-    - megacheck
-    - structcheck
-    - gas
-    - gocyclo
     - dupl
-    - misspell
-    - unparam
-    - varcheck
-    - deadcode
-    - typecheck
-    - ineffassign
-    - varcheck
-    - stylecheck
     - gochecknoinits
-    - exportloopref
     - gocritic
+    - gocyclo
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
     - nakedret
-    - gosimple
     - prealloc
+    - revive
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+    - errcheck
+  settings:
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+    gocritic:
+      disabled-checks:
+        - hugeParam
+      enabled-tags:
+        - performance
+        - style
+        - experimental
+    govet:
+      enable:
+        - shadow
+    lll:
+      line-length: 140
+    misspell:
+      locale: US
+    revive:
+      confidence: 0.1
+  exclusions:
+    rules:
+      - linters:
+          - staticcheck
+        text: at least one file in a package should have a package comment
+      - linters:
+          - revive
+        text: 'package-comments: should have a package comment'
+      - linters:
+          - dupl
+          - gosec
+        path: _test\.go
+      - linters:
+          - govet
+        text: 'shadow: declaration of "err" shadows'
 
-    ## format - fill free to fix
-#    - errcheck
-#    - gofmt
-#    - goimports
-  fast: false
-  disable-all: true
-
-issues:
-  exclude-rules:
-#    - Fix and remove
-    - text: "at least one file in a package should have a package comment"
-      linters:
-        - stylecheck
-  #    - Fix and remove
-    - text: "package-comments: should have a package comment"
-      linters:
-        - revive
-    - path: _test\.go
-      linters:
-        - gosec
-        - dupl
-    - text: "shadow: declaration of \"err\" shadows"
-      linters:
-        - govet
-  exclude-use-default: false
+formatters:
+  enable:
+    - gofmt
+    - goimports
+    - gci

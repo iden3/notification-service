@@ -7,3 +7,7 @@
 
 keypair.pem
 pub.pem
+
+.update
+
+resolvers.settings.yaml

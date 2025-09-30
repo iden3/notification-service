@@ -40,6 +40,7 @@ to start use docker-compose file.
     export SERVER_HOST="http://localhost:8080"
     export SERVER_PORT="8085"
     export REDIS_URL="redis://username:userpassword@localhost:6379/1"
+    export AUTH_MIDDLEWARE_VERIFIER_DID="verifier_did"
    ```
    GATEWAY_HOST - URL to `sygnal` instance. <br/>
 5. Read env variables:

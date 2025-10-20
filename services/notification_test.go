@@ -24,7 +24,8 @@ func signalRejectedMock(t *testing.T) *httptest.Server {
 		require.Contains(t, string(data), mockPushKey)
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"rejected":["cyoy-rV4Yls7HG3P5vDn5j:APA91bGSRgegCsNBXIwTeHvWCgMExvmVINl3r8RYZFG0MxtKdw_zIiJIft1m0V0etDOGIPDYOVNU6NuZ_S9yELw2veT_9ZOZsYXoY_3bdDT38c-eb6oAoj0Lq3rgY5YZmWc0t6JWFgYJ"]}`))
+		_, err = w.Write([]byte(`{"rejected":["cyoy-rV4Yls7HG3P5vDn5j:APA91bGSRgegCsNBXIwTeHvWCgMExvmVINl3r8RYZFG0MxtKdw_zIiJIft1m0V0etDOGIPDYOVNU6NuZ_S9yELw2veT_9ZOZsYXoY_3bdDT38c-eb6oAoj0Lq3rgY5YZmWc0t6JWFgYJ"]}`))
+		require.NoError(t, err)
 	}))
 }
 func signalSuccessMock(t *testing.T) *httptest.Server {
@@ -34,7 +35,8 @@ func signalSuccessMock(t *testing.T) *httptest.Server {
 		require.Contains(t, string(data), mockPushKey)
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"rejected":[]}`))
+		_, err = w.Write([]byte(`{"rejected":[]}`))
+		require.NoError(t, err)
 	}))
 }
 
@@ -62,7 +64,7 @@ func TestNotificationService_SendNotification(t *testing.T) {
 	redisMock := RedisMock{}
 
 	// mock signal with http_test.
-	notificationService := NewNotificationService(notificationClient, cs, redisMock, "host")
+	notificationService := NewNotificationService(notificationClient, cs, redisMock, "host", time.Hour*24)
 
 	device := Device{
 		AppID:   "local.id",
@@ -105,7 +107,7 @@ func TestNotificationService_SendNotificationRejected(t *testing.T) {
 	redisMock := RedisMock{}
 
 	// mock signal with http_test.
-	proxy := NewNotificationService(notificationClient, cs, redisMock, "host")
+	proxy := NewNotificationService(notificationClient, cs, redisMock, "host", time.Hour*24)
 
 	device := Device{
 		AppID:   "local.id",
@@ -148,7 +150,7 @@ func TestNotificationService_SendNotificationFailed(t *testing.T) {
 	redisMock := RedisMock{}
 
 	// mock signal with http_test.
-	proxy := NewNotificationService(notificationClient, cs, redisMock, "host")
+	proxy := NewNotificationService(notificationClient, cs, redisMock, "host", time.Hour*24)
 
 	msg := &PushNotification{
 		Message: []byte(`{"my_cat": "123321"}`),

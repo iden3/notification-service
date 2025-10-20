@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/render"
-
 	"github.com/iden3/notification-service/log"
 )
 

@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"strings"
+	"net/url"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,6 +17,24 @@ import (
 type PushNotification struct {
 	Message      json.RawMessage `json:"message"`
 	PushMetadata PushMetadata    `json:"metadata"`
+}
+
+func (p *PushNotification) Validate() error {
+	if len(p.Message) == 0 {
+		return errors.New("message is required")
+	}
+	if len(p.PushMetadata.Devices) == 0 {
+		return errors.New("at least one device is required")
+	}
+	for _, d := range p.PushMetadata.Devices {
+		if d.Ciphertext == "" {
+			return errors.New("device ciphertext is required")
+		}
+		if d.Alg == "" {
+			return errors.New("device alg is required")
+		}
+	}
+	return nil
 }
 
 // PushMetadata is an array of  encrypted devices info
@@ -48,19 +66,21 @@ type cachingService interface {
 
 // Notification is a service to notification push notification
 type Notification struct {
-	notification   *PushClient
-	cryptoService  cryptoService
-	cachingService cachingService
-	hostURL        string
+	notification       *PushClient
+	cryptoService      cryptoService
+	cachingService     cachingService
+	hostURL            string
+	expirationDuration time.Duration
 }
 
 // NewNotificationService new instance of notification service
-func NewNotificationService(n *PushClient, c cryptoService, cs cachingService, host string) *Notification {
+func NewNotificationService(n *PushClient, c cryptoService, cs cachingService, host string, expirationDuration time.Duration) *Notification {
 	return &Notification{
-		notification:   n,
-		cryptoService:  c,
-		cachingService: cs,
-		hostURL:        host,
+		notification:       n,
+		cryptoService:      c,
+		cachingService:     cs,
+		hostURL:            host,
+		expirationDuration: expirationDuration,
 	}
 }
 
@@ -154,43 +174,75 @@ func (ns *Notification) decryptDeviceInfo(enc EncryptedDeviceMetadata) (Device, 
 func (ns *Notification) notify(ctx context.Context, push *PushNotification, devices []Device) ([]string, error) {
 
 	id := uuid.NewString()
+	idToDevices := make(map[string][]Device)
+	for _, d := range devices {
+		key := buildMessageKey(d.UniqueID, id)
+		idToDevices[key] = append(idToDevices[key], d)
+	}
 
 	bytesToSave, err := json.Marshal(push.Message)
 	if err != nil {
 		return nil, errors.New("failed to prepare notification")
-
 	}
-	// save a message to a caching service
-	err = ns.cachingService.Set(ctx, id, bytesToSave, time.Hour*24)
+
+	rejects := []string{}
+	for saveID, devices := range idToDevices {
+		// save a message to a caching service
+		err = ns.cachingService.Set(ctx, saveID,
+			bytesToSave, ns.expirationDuration)
+		if err != nil {
+			log.Error(err)
+			return nil, errors.New("failed to save device notification")
+		}
+
+		u, err := buildResourceURL(ns.hostURL, saveID)
+		if err != nil {
+			log.Error(err)
+			return nil, errors.New("failed to build notification URL")
+		}
+
+		contentBody := struct {
+			ID  string `json:"id"`
+			URL string `json:"url"`
+		}{
+			ID:  saveID,
+			URL: u,
+		}
+
+		rawContentBody, err := json.Marshal(contentBody)
+		if err != nil {
+			log.Error(err)
+			return nil, errors.New("failed to marshal notification content")
+		}
+
+		c := Content{
+			Body: rawContentBody,
+		}
+		rejectedTokens, err := ns.notification.SendPush(ctx, devices, c)
+		if err != nil {
+			log.Error(err)
+			return nil, errors.New("failed to notify devices")
+
+		}
+		rejects = append(rejects, rejectedTokens...)
+	}
+	return rejects, nil
+}
+
+func buildResourceURL(host, id string) (string, error) {
+	u, err := url.Parse(host)
 	if err != nil {
-		log.Error(err)
-		return nil, errors.New("failed to save device notification")
+		return "", err
 	}
-	contentBody := struct {
-		ID  string `json:"id"`
-		URL string `json:"url"`
-	}{
-		ID:  id,
-		URL: fmt.Sprintf("%s/api/v1/%s", strings.Trim(ns.hostURL, "/"), id),
-	}
+	u = u.JoinPath("api", "v1", id)
+	return u.String(), nil
+}
 
-	rawContentBody, err := json.Marshal(contentBody)
-
-	if err != nil {
-		log.Error(err)
-		return nil, errors.New("failed to notify devices")
+func buildMessageKey(uniqueID, id string) string {
+	if uniqueID == "" {
+		return id
 	}
-	c := Content{
-		Body: rawContentBody,
-	}
-	rejectedTokens, err := ns.notification.SendPush(ctx, devices, c)
-	if err != nil {
-		log.Error(err)
-		return nil, errors.New("failed to notify devices")
-
-	}
-	return rejectedTokens, nil
-
+	return fmt.Sprintf("%s+%s", uniqueID, id)
 }
 
 func contains(a []string, x string) bool {

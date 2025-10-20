@@ -1,7 +1,4 @@
-##
-## Build did driver
-##
-FROM golang:1.19.7-alpine as base
+FROM golang:1.24 AS base
 
 WORKDIR /build
 
@@ -14,10 +11,13 @@ COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 
-RUN CGO_ENABLED=0 go build -o ./notification ./cmd/main.go
+RUN go build -o ./notification ./cmd/main.go
 
-# Build an driver image
-FROM scratch
+FROM alpine:3.22
+
+RUN apk add --no-cache libstdc++ gcompat libgomp
+RUN apk add --update busybox>1.3.1-r0
+RUN apk add --update openssl>3.1.4-r1
 
 COPY --from=base /build/notification       /app/notification
 COPY --from=base  /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/

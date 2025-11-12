@@ -47,8 +47,8 @@ func (s *SubscriptionService) Subscribe(userDID string) (<-chan NotificationPayl
 	// Check if max subscriptions reached
 	// if maxSubscriptionsPerUser is 0, then unlimited subscriptions are allowed
 	if s.maxSubscriptionsPerUser > 0 &&
-		len(s.subscribers[subscriber]) > s.maxSubscriptionsPerUser {
-		return nil, fmt.Errorf("%w: allowed connectios: %v",
+		len(s.subscribers[subscriber]) >= s.maxSubscriptionsPerUser {
+		return nil, fmt.Errorf("%w: allowed connections: %v",
 			ErrMaxSubscriptionsReached, s.maxSubscriptionsPerUser)
 	}
 

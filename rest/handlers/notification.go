@@ -227,7 +227,13 @@ func (h *PushNotificationHandler) SubscribeNotifications(w http.ResponseWriter, 
 			_, _ = fmt.Fprint(w, utils.PingMessage)
 			flusher.Flush()
 		case <-r.Context().Done():
-			log.WithContext(r.Context()).Info(slog.String("connection closed", "context done"))
+			log.WithContext(r.Context()).Info(
+				"connection closed",
+				slog.String(
+					"reason",
+					"context done",
+				),
+			)
 			return
 		}
 	}

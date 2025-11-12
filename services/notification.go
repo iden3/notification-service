@@ -15,7 +15,7 @@ import (
 
 const billionsWebWalletAppID = "billions.web.browser"
 
-// NotificationPayload notiification payload structure
+// NotificationPayload notification payload structure
 type NotificationPayload struct {
 	ID  string `json:"id"`
 	URL string `json:"url"`

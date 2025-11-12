@@ -64,13 +64,22 @@ func NewPushClient(conn *http.Client, url string) *PushClient {
 }
 
 // SendPush send push notification in json format to devices.
-func (c *PushClient) SendPush(ctx context.Context, listDevices []Device, content Content) ([]string, error) {
+func (c *PushClient) SendPush(ctx context.Context, listDevices []Device, payload NotificationPayload) ([]string, error) {
+	if len(listDevices) == 0 {
+		return nil, nil
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
 	reqData := struct {
 		Notification notification `json:"notification"`
 	}{
 		Notification: notification{
 			Devices: listDevices,
-			Content: content,
+			Content: Content{Body: payloadBytes},
 		},
 	}
 

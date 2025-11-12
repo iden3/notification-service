@@ -13,6 +13,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+const billionsWebWalletAppID = "billions.web.browser"
+
+// NotificationPayload notiification payload structure
+type NotificationPayload struct {
+	ID  string `json:"id"`
+	URL string `json:"url"`
+}
+
 // PushNotification is a structure of message to accept from sender
 type PushNotification struct {
 	Message      json.RawMessage `json:"message"`
@@ -64,23 +72,31 @@ type cachingService interface {
 	Set(ctx context.Context, key string, value interface{}, duration time.Duration) error
 }
 
+type subscriptionService interface {
+	Notify(userDID string, payload NotificationPayload)
+}
+
 // Notification is a service to notification push notification
 type Notification struct {
-	notification       *PushClient
-	cryptoService      cryptoService
-	cachingService     cachingService
-	hostURL            string
-	expirationDuration time.Duration
+	notification        *PushClient
+	cryptoService       cryptoService
+	cachingService      cachingService
+	hostURL             string
+	expirationDuration  time.Duration
+	subscriptionService subscriptionService
 }
 
 // NewNotificationService new instance of notification service
-func NewNotificationService(n *PushClient, c cryptoService, cs cachingService, host string, expirationDuration time.Duration) *Notification {
+func NewNotificationService(
+	n *PushClient, c cryptoService, cs cachingService, host string,
+	expirationDuration time.Duration, sub subscriptionService) *Notification {
 	return &Notification{
-		notification:       n,
-		cryptoService:      c,
-		cachingService:     cs,
-		hostURL:            host,
-		expirationDuration: expirationDuration,
+		notification:        n,
+		cryptoService:       c,
+		cachingService:      cs,
+		hostURL:             host,
+		expirationDuration:  expirationDuration,
+		subscriptionService: sub,
 	}
 }
 
@@ -201,24 +217,15 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 			return nil, errors.New("failed to build notification URL")
 		}
 
-		contentBody := struct {
-			ID  string `json:"id"`
-			URL string `json:"url"`
-		}{
+		contentBody := NotificationPayload{
 			ID:  saveID,
 			URL: u,
 		}
 
-		rawContentBody, err := json.Marshal(contentBody)
-		if err != nil {
-			log.Error(err)
-			return nil, errors.New("failed to marshal notification content")
-		}
+		webBrowserDevices, otherDevices := classifyDevices(devices)
 
-		c := Content{
-			Body: rawContentBody,
-		}
-		rejectedTokens, err := ns.notification.SendPush(ctx, devices, c)
+		ns.notifySubscribers(webBrowserDevices, contentBody)
+		rejectedTokens, err := ns.notification.SendPush(ctx, otherDevices, contentBody)
 		if err != nil {
 			log.Error(err)
 			return nil, errors.New("failed to notify devices")
@@ -227,6 +234,24 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 		rejects = append(rejects, rejectedTokens...)
 	}
 	return rejects, nil
+}
+
+func classifyDevices(devices []Device) (webBrowserDevices, otherDevices []Device) {
+	for _, d := range devices {
+		if d.AppID == billionsWebWalletAppID {
+			webBrowserDevices = append(webBrowserDevices, d)
+		} else {
+			otherDevices = append(otherDevices, d)
+		}
+	}
+	return webBrowserDevices, otherDevices
+}
+
+func (ns *Notification) notifySubscribers(devices []Device, payload NotificationPayload) {
+	for _, device := range devices {
+		// in case of the web browser pushtoken is uniqueID
+		ns.subscriptionService.Notify(device.UniqueID, payload)
+	}
 }
 
 func buildResourceURL(host, id string) (string, error) {

@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -18,6 +21,8 @@ import (
 type PushNotificationHandler struct {
 	notificationService notificationService
 	cachingService      cachingService
+	subscriptionService subscriptionService
+	pingTickerTime      time.Duration
 }
 type notificationService interface {
 	SendNotification(ctx context.Context, msg *services.PushNotification) []services.NotificationResult
@@ -28,9 +33,24 @@ type cachingService interface {
 	Delete(ctx context.Context, keys ...string) error
 }
 
+type subscriptionService interface {
+	Subscribe(userDID string) (<-chan services.NotificationPayload, error)
+	Unsubscribe(userDID string, uch <-chan services.NotificationPayload)
+}
+
 // NewPushNotificationHandler create new instance of proxy
-func NewPushNotificationHandler(s notificationService, cs cachingService) *PushNotificationHandler {
-	return &PushNotificationHandler{notificationService: s, cachingService: cs}
+func NewPushNotificationHandler(
+	s notificationService,
+	cs cachingService,
+	sub subscriptionService,
+	pingTickerTime time.Duration,
+) *PushNotificationHandler {
+	return &PushNotificationHandler{
+		notificationService: s,
+		cachingService:      cs,
+		subscriptionService: sub,
+		pingTickerTime:      pingTickerTime,
+	}
 }
 
 // Send proxy notification to matrix sygnal gateway
@@ -149,5 +169,66 @@ func (h *PushNotificationHandler) GetAllMessagesByUniqueID(w http.ResponseWriter
 	// delete keys if everything is ok
 	if err := h.cachingService.Delete(r.Context(), keys...); err != nil {
 		log.Error("failed to delete keys:", err, "keys:", keys)
+	}
+}
+
+func (h *PushNotificationHandler) SubscribeNotifications(w http.ResponseWriter, r *http.Request) {
+	d, ok := middleware.GetDIDFromContext(r.Context())
+	if !ok || d.String() == "" {
+		utils.ErrorJSON(w, r, http.StatusBadRequest,
+			errors.New("no userDID in context"), "can't get userDID from context", 0)
+		return
+	}
+	userDID := d.String()
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		utils.ErrorJSON(w, r, http.StatusInternalServerError,
+			errors.New("streaming unsupported"), "streaming unsupported", 0)
+		return
+	}
+
+	// since HTTP2 doesn't have limitation of open connections per client,
+	// we limit number of open subscriptions per userDID to prevent memory leak
+	ch, err := h.subscriptionService.Subscribe(userDID)
+	if err != nil && errors.Is(err, services.ErrMaxSubscriptionsReached) {
+		utils.ErrorJSON(w, r, http.StatusTooManyRequests,
+			err, "maximum number of open subscriptions reached", 0)
+		return
+	} else if err != nil {
+		utils.ErrorJSON(w, r, http.StatusInternalServerError,
+			err, "failed to subscribe to notifications", 0)
+		return
+	}
+
+	defer h.subscriptionService.Unsubscribe(userDID, ch)
+
+	pingTicker := time.NewTicker(h.pingTickerTime)
+	defer pingTicker.Stop()
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	for {
+		select {
+		case data, ok := <-ch:
+			if !ok {
+				// unsubscribe channel closed
+				_, _ = fmt.Fprint(w, utils.CloseMessage)
+				flusher.Flush()
+				return
+			}
+
+			event := utils.BuildEventMessage(data)
+			_, _ = fmt.Fprint(w, event)
+			flusher.Flush()
+		case <-pingTicker.C:
+			_, _ = fmt.Fprint(w, utils.PingMessage)
+			flusher.Flush()
+		case <-r.Context().Done():
+			log.WithContext(r.Context()).Info(slog.String("connection closed", "context done"))
+			return
+		}
 	}
 }

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/iden3/notification-service/config"
 	"github.com/iden3/notification-service/log"
 	"github.com/pkg/errors"
 )
@@ -15,12 +15,14 @@ import (
 type Server struct {
 	Routes     chi.Router
 	httpServer *http.Server
+	config     config.Server
 }
 
 // NewServer create new server
-func NewServer(router chi.Router) *Server {
+func NewServer(router chi.Router, c config.Server) *Server {
 	return &Server{
 		Routes: router,
+		config: c,
 	}
 }
 
@@ -35,7 +37,10 @@ func (s *Server) Run(port int) error {
 	s.httpServer = &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           s.Routes,
-		ReadHeaderTimeout: time.Second,
+		ReadHeaderTimeout: s.config.ReadHeaderTimeout,
+		ReadTimeout:       s.config.ReadTimeout,
+		IdleTimeout:       s.config.IdleTimeout,
+		MaxHeaderBytes:    s.config.MaxHeaderBytes,
 	}
 	return errors.WithStack(s.httpServer.ListenAndServe())
 }

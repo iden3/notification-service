@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"net/http"
+	_ "net/http/pprof" // #nosec G108 // we don't use default mux
 	"os"
 	"time"
 
@@ -27,6 +28,16 @@ func main() {
 	log.SetEnv(cfg.Log.Env)
 	// set log level from config
 	log.SetLevelStr(cfg.Log.Level)
+
+	if cfg.EnableHTTPPprof {
+		go func() {
+			log.Info("Starting pprof server on :6060")
+			//nolint:gosec // We use it only for debugging purposes
+			if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+				log.Errorf("pprof server error: %v", err)
+			}
+		}()
+	}
 
 	var b *pem.Block
 	b, _ = pem.Decode([]byte(cfg.PrivateKey))
@@ -74,10 +85,13 @@ func main() {
 	}
 	log.Info("Connected to Redis")
 
+	subscriptionService := services.NewSubscriptionService(
+		cfg.Subscription.MaxConnectionPerUser)
+
 	cachingService := services.NewRedisCacheService(redisClient)
 	notificationClient := services.NewPushClient(c, cfg.Gateway.Host)
 	notificationService := services.NewNotificationService(notificationClient, cryptoService,
-		cachingService, cfg.Server.Host, cfg.Redis.ExpirationDuration)
+		cachingService, cfg.Server.Host, cfg.Redis.ExpirationDuration, subscriptionService)
 
 	authmiddleware, err := setupAuthMiddleware(cfg)
 	if err != nil {
@@ -86,12 +100,18 @@ func main() {
 	}
 
 	h := rest.NewHandlers(
-		handlers.NewPushNotificationHandler(notificationService, cachingService),
+		handlers.NewPushNotificationHandler(
+			notificationService,
+			cachingService,
+			subscriptionService,
+			cfg.Subscription.PingTickerTime,
+		),
 		handlers.NewKeyHandler(cryptoService),
 		authmiddleware,
+		cfg.CORS,
 	)
 	r := h.Routes()
-	server := rest.NewServer(r)
+	server := rest.NewServer(r, cfg.Server)
 	err = server.Run(cfg.Server.Port)
 	if errors.Cause(err) == http.ErrServerClosed {
 		log.Info("HTTP server stopped")

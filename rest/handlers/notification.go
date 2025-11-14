@@ -167,9 +167,11 @@ func (h *PushNotificationHandler) GetAllMessagesByUniqueID(w http.ResponseWriter
 	}
 
 	// delete keys if everything is ok
-	if err := h.cachingService.Delete(r.Context(), keys...); err != nil {
-		log.Error("failed to delete keys:", err, "keys:", keys)
-	}
+	// TODO (illia-korotia): we have to implement ACK message to remove notification
+	// or manage notifications on the sender side
+	// if err := h.cachingService.Delete(r.Context(), keys...); err != nil {
+	// 	log.Error("failed to delete keys:", err, "keys:", keys)
+	// }
 }
 
 func (h *PushNotificationHandler) SubscribeNotifications(w http.ResponseWriter, r *http.Request) {

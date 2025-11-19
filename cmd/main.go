@@ -105,6 +105,7 @@ func main() {
 			cachingService,
 			subscriptionService,
 			cfg.Subscription.PingTickerTime,
+			cfg.Redis.ExpirationDuration,
 		),
 		handlers.NewKeyHandler(cryptoService),
 		authmiddleware,

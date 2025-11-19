@@ -65,9 +65,13 @@ func (s *Handlers) Routes() chi.Router {
 			Get("/all", s.proxyHandler.GetAllMessagesByUniqueID)
 
 		api.Get("/{id}", s.proxyHandler.Get)
+		api.Post("/{id}/ack", s.proxyHandler.AckMessage)
 
 		api.With(s.authmiddleware).
 			Get("/subscribe", s.proxyHandler.SubscribeNotifications)
+	})
+	r.Route("/api/v2", func(api chi.Router) {
+		api.Get("/{id}", s.proxyHandler.GetV2)
 	})
 
 	return r

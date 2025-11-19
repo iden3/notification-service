@@ -23,6 +23,7 @@ type PushNotificationHandler struct {
 	cachingService      cachingService
 	subscriptionService subscriptionService
 	pingTickerTime      time.Duration
+	expirationDuration  time.Duration
 }
 type notificationService interface {
 	SendNotification(ctx context.Context, msg *services.PushNotification) []services.NotificationResult
@@ -31,6 +32,7 @@ type cachingService interface {
 	Get(ctx context.Context, key string) (interface{}, error)
 	GetAllByPrefix(ctx context.Context, prefix string) (values []interface{}, keys []string, err error)
 	Delete(ctx context.Context, keys ...string) error
+	Set(ctx context.Context, key string, value interface{}, duration time.Duration) error
 }
 
 type subscriptionService interface {
@@ -44,12 +46,14 @@ func NewPushNotificationHandler(
 	cs cachingService,
 	sub subscriptionService,
 	pingTickerTime time.Duration,
+	expirationDuration time.Duration,
 ) *PushNotificationHandler {
 	return &PushNotificationHandler{
 		notificationService: s,
 		cachingService:      cs,
 		subscriptionService: sub,
 		pingTickerTime:      pingTickerTime,
+		expirationDuration:  expirationDuration,
 	}
 }
 
@@ -80,8 +84,8 @@ func (h *PushNotificationHandler) Send(w http.ResponseWriter, r *http.Request) {
 }
 
 // Get returns notification by identifier
+// returns only body to keep backward compatibility
 func (h *PushNotificationHandler) Get(w http.ResponseWriter, r *http.Request) {
-
 	idParam := chi.URLParam(r, "id")
 	if idParam == "" {
 		utils.ErrorJSON(w, r, http.StatusBadRequest, errors.New("no id param"), "can't  get notification id param", 0)
@@ -97,20 +101,66 @@ func (h *PushNotificationHandler) Get(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorJSON(w, r, http.StatusNotFound, errors.New("notification not found"), "expired", 0)
 		return
 	}
-	msg, ok := resp.(string)
+	respStr, ok := resp.(string)
 	if !ok {
 		utils.ErrorJSON(w, r, http.StatusNotFound, errors.New("invalid message from redis"), "error", 0)
 		return
 	}
+
+	var msg services.NotificationContent
+	if err := json.Unmarshal([]byte(respStr), &msg); err != nil {
+		utils.ErrorJSON(w, r, http.StatusInternalServerError, err, "failed to unmarshal notification", 0)
+		return
+	}
+
+	// old message format doesn't contain metadata
+	var payload []byte
+	if services.IsEmptyMetadata(msg.Metadata) {
+		// it true: message has raw format without metadata
+		payload = []byte(respStr)
+	} else {
+		// if false: message has new format with metadata
+		payload = msg.Body
+	}
+
 	render.Status(r, http.StatusOK)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	if err := json.NewEncoder(w).Encode(json.RawMessage(msg)); err != nil {
+	// return body only to keep backward compatibility with old clients
+	if err := json.NewEncoder(w).Encode(json.RawMessage(payload)); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// delete key if everything is ok
-	if err := h.cachingService.Delete(r.Context(), idParam); err != nil {
-		log.Error("failed to delete key:", err, "key:", idParam)
+}
+
+// GetV2 returns notification by identifier for v2 API
+// returns body and metadata
+func (h *PushNotificationHandler) GetV2(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+	if idParam == "" {
+		utils.ErrorJSON(w, r, http.StatusBadRequest, errors.New("no id param"), "can't  get notification id param", 0)
+		return
+	}
+
+	resp, err := h.cachingService.Get(r.Context(), idParam)
+	if err != nil {
+		utils.ErrorJSON(w, r, http.StatusInternalServerError, err, "failed to get notification", 0)
+		return
+	}
+	if resp == nil {
+		utils.ErrorJSON(w, r, http.StatusNotFound, errors.New("notification not found"), "expired", 0)
+		return
+	}
+	respStr, ok := resp.(string)
+	if !ok {
+		utils.ErrorJSON(w, r, http.StatusNotFound, errors.New("invalid message from redis"), "error", 0)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if err := json.NewEncoder(w).Encode(json.RawMessage(respStr)); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -143,8 +193,9 @@ func (h *PushNotificationHandler) GetAllMessagesByUniqueID(w http.ResponseWriter
 	}
 
 	type payload struct {
-		ID   string          `json:"id"`
-		Body json.RawMessage `json:"body"`
+		ID       string                        `json:"id"`
+		Body     json.RawMessage               `json:"body"`
+		Metadata services.NotificationMetadata `json:"metadata"`
 	}
 
 	respStr := make([]payload, 0, len(keys))
@@ -155,7 +206,27 @@ func (h *PushNotificationHandler) GetAllMessagesByUniqueID(w http.ResponseWriter
 				errors.New("invalid message from redis"), "error", 0)
 			return
 		}
-		respStr = append(respStr, payload{keys[i], json.RawMessage(msg)})
+
+		var nContent services.NotificationContent
+		if err := json.Unmarshal([]byte(msg), &nContent); err != nil {
+			utils.ErrorJSON(w, r, http.StatusInternalServerError,
+				err, "failed to unmarshal notification", 0)
+			return
+		}
+
+		// TODO (illia-korotia): this is temporary fix for old messages without metadata
+		// when all old messages will be expired, we can remove this block
+		body := nContent.Body
+		if services.IsEmptyMetadata(nContent.Metadata) {
+			// old message format without metadata
+			body = []byte(msg)
+		}
+
+		respStr = append(respStr, payload{
+			ID:       keys[i],
+			Body:     body,
+			Metadata: nContent.Metadata,
+		})
 	}
 
 	render.Status(r, http.StatusOK)
@@ -165,11 +236,59 @@ func (h *PushNotificationHandler) GetAllMessagesByUniqueID(w http.ResponseWriter
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
 
-	// delete keys if everything is ok
-	if err := h.cachingService.Delete(r.Context(), keys...); err != nil {
-		log.Error("failed to delete keys:", err, "keys:", keys)
+// AckMessage marks a message as read
+func (h *PushNotificationHandler) AckMessage(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+	if idParam == "" {
+		utils.ErrorJSON(w, r, http.StatusBadRequest, errors.New("no id param"), "can't get notification id param", 0)
+		return
 	}
+
+	resp, err := h.cachingService.Get(r.Context(), idParam)
+	if err != nil {
+		utils.ErrorJSON(w, r, http.StatusInternalServerError, err, "failed to get notification", 0)
+		return
+	}
+	if resp == nil {
+		utils.ErrorJSON(w, r, http.StatusNotFound, errors.New("notification not found"), "expired", 0)
+		return
+	}
+
+	respStr, ok := resp.(string)
+	if !ok {
+		utils.ErrorJSON(w, r, http.StatusNotFound, errors.New("invalid message from redis"), "error", 0)
+		return
+	}
+
+	var msg services.NotificationContent
+	if err := json.Unmarshal([]byte(respStr), &msg); err != nil {
+		utils.ErrorJSON(w, r, http.StatusInternalServerError, err, "failed to unmarshal notification", 0)
+		return
+	}
+
+	msg.Metadata.ReadAt = time.Now().UTC()
+	msg.Metadata.IsRead = true
+
+	updatedBytes, err := json.Marshal(msg)
+	if err != nil {
+		utils.ErrorJSON(w, r, http.StatusInternalServerError, err, "failed to marshal updated notification", 0)
+		return
+	}
+
+	err = h.cachingService.Set(r.Context(), idParam, updatedBytes, h.expirationDuration)
+	if err != nil {
+		utils.ErrorJSON(w, r, http.StatusInternalServerError, err, "failed to update notification", 0)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, struct {
+		Success bool `json:"success"`
+	}{
+		Success: true,
+	})
 }
 
 func (h *PushNotificationHandler) SubscribeNotifications(w http.ResponseWriter, r *http.Request) {

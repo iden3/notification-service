@@ -21,6 +21,28 @@ type NotificationPayload struct {
 	URL string `json:"url"`
 }
 
+type NotificationMetadata struct {
+	CreatedAt time.Time `json:"created_at"`
+	ReadAt    time.Time `json:"read_at"`
+	IsRead    bool      `json:"is_read"`
+}
+
+func NewMetadata() NotificationMetadata {
+	return NotificationMetadata{
+		CreatedAt: time.Now().UTC(),
+		IsRead:    false,
+	}
+}
+
+func IsEmptyMetadata(m NotificationMetadata) bool {
+	return m.CreatedAt.IsZero() && m.ReadAt.IsZero() && !m.IsRead
+}
+
+type NotificationContent struct {
+	Metadata NotificationMetadata `json:"metadata"`
+	Body     json.RawMessage      `json:"body"`
+}
+
 // PushNotification is a structure of message to accept from sender
 type PushNotification struct {
 	Message      json.RawMessage `json:"message"`
@@ -196,7 +218,10 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 		idToDevices[key] = append(idToDevices[key], d)
 	}
 
-	bytesToSave, err := json.Marshal(push.Message)
+	bytesToSave, err := json.Marshal(NotificationContent{
+		Metadata: NewMetadata(),
+		Body:     push.Message,
+	})
 	if err != nil {
 		return nil, errors.New("failed to prepare notification")
 	}

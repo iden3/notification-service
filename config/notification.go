@@ -28,7 +28,7 @@ type NotificationService struct {
 
 // CORS holds configuration for allowed origins and headers
 type CORS struct {
-	AllowedOrigins []string `envconfig:"ALLOWED_ORIGINS" default:"https://*"`
+	AllowedOrigins []string `envconfig:"ALLOWED_ORIGINS" default:"https://*,http://*"`
 	AllowedHeaders []string `envconfig:"ALLOWED_HEADERS" default:"Accept,Authorization,Content-Type,X-CSRF-Token"`
 	MaxAge         int      `envconfig:"MAX_AGE" default:"300"`
 }

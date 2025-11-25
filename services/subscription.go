@@ -72,10 +72,14 @@ func (s *SubscriptionService) Unsubscribe(userDID string, uch <-chan Notificatio
 		return
 	}
 
-	for id, c := range channels {
+	for idx, c := range channels {
+		// nolint:gocritic // breaking loop is intended here
 		if c == uch {
+			// https://go.dev/wiki/SliceTricks to prevent memory leak
 			close(c)
-			s.subscribers[subscriber] = append(channels[:id], channels[id+1:]...)
+			copy(channels[idx:], channels[idx+1:])
+			channels[len(channels)-1] = nil
+			s.subscribers[subscriber] = channels[:len(channels)-1]
 			break
 		}
 	}

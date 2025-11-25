@@ -1,11 +1,11 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/iden3/notification-service/log"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -28,14 +28,19 @@ type SubscriptionService struct {
 	subscribers map[Subscriber][]chan NotificationPayload
 
 	maxSubscriptionsPerUser int
+	channelBufferSize       int
 }
 
-func NewSubscriptionService(maxSubscriptionsPerUser int) *SubscriptionService {
+func NewSubscriptionService(
+	maxSubscriptionsPerUser int,
+	channelBufferSize int,
+) *SubscriptionService {
 	return &SubscriptionService{
 		lock:        sync.RWMutex{},
 		subscribers: make(map[Subscriber][]chan NotificationPayload),
 
 		maxSubscriptionsPerUser: maxSubscriptionsPerUser,
+		channelBufferSize:       channelBufferSize,
 	}
 }
 
@@ -52,7 +57,7 @@ func (s *SubscriptionService) Subscribe(userDID string) (<-chan NotificationPayl
 			ErrMaxSubscriptionsReached, s.maxSubscriptionsPerUser)
 	}
 
-	ch := make(chan NotificationPayload)
+	ch := make(chan NotificationPayload, s.channelBufferSize)
 	s.subscribers[subscriber] = append(s.subscribers[subscriber], ch)
 	return ch, nil
 }

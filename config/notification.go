@@ -105,4 +105,5 @@ type AuthenticationMiddleware struct {
 type Subscription struct {
 	PingTickerTime       time.Duration `envconfig:"PING_TICKER_TIME" default:"10s"`
 	MaxConnectionPerUser int           `envconfig:"MAX_CONNECTION_PER_USER" default:"10"`
+	ChannelBufferSize    int           `envconfig:"CHANNEL_BUFFER_SIZE" default:"10"`
 }

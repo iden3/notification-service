@@ -5,7 +5,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/go-chi/render"
+	"github.com/iden3/notification-service/config"
 	"github.com/iden3/notification-service/rest/handlers"
 )
 
@@ -15,17 +17,20 @@ type Handlers struct {
 	keyHandler   *handlers.KeyHandler
 
 	authmiddleware func(http.Handler) http.Handler
+	corsCfg        config.CORS
 }
 
 // NewHandlers create handlers.
 func NewHandlers(
 	p *handlers.PushNotificationHandler,
 	k *handlers.KeyHandler,
-	a func(http.Handler) http.Handler) *Handlers {
+	a func(http.Handler) http.Handler,
+	corsCfg config.CORS) *Handlers {
 	return &Handlers{
 		proxyHandler:   p,
 		keyHandler:     k,
 		authmiddleware: a,
+		corsCfg:        corsCfg,
 	}
 }
 
@@ -37,6 +42,14 @@ func (s *Handlers) Routes() chi.Router {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   s.corsCfg.AllowedOrigins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   s.corsCfg.AllowedHeaders,
+		AllowCredentials: false,
+		MaxAge:           s.corsCfg.MaxAge,
+	}))
 
 	r.Get("/status", func(w http.ResponseWriter, r *http.Request) {
 		render.Status(r, http.StatusOK)
@@ -52,6 +65,13 @@ func (s *Handlers) Routes() chi.Router {
 			Get("/all", s.proxyHandler.GetAllMessagesByUniqueID)
 
 		api.Get("/{id}", s.proxyHandler.Get)
+		api.Post("/{id}/ack", s.proxyHandler.AckMessage)
+
+		api.With(s.authmiddleware).
+			Get("/subscribe", s.proxyHandler.SubscribeNotifications)
+	})
+	r.Route("/api/v2", func(api chi.Router) {
+		api.Get("/{id}", s.proxyHandler.GetV2)
 	})
 
 	return r

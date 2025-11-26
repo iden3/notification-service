@@ -7,6 +7,7 @@ import (
 	"net/http"
 	_ "net/http/pprof" // #nosec G108 // we don't use default mux
 	"os"
+	"runtime"
 	"time"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
@@ -31,6 +32,7 @@ func main() {
 
 	if cfg.EnableHTTPPprof {
 		go func() {
+			runtime.SetBlockProfileRate(1)
 			log.Info("Starting pprof server on :6060")
 			//nolint:gosec // We use it only for debugging purposes
 			if err := http.ListenAndServe("localhost:6060", nil); err != nil {

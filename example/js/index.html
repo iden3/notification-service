@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Service - EventSource Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔔 Notification Service</h1>
+            <p>EventSource (SSE) Demo</p>
+        </header>
+
+        <div class="connection-panel">
+            <div class="status-indicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Disconnected</span>
+            </div>
+            <div class="controls">
+                <button id="connectBtn" class="btn btn-primary">Connect</button>
+                <button id="disconnectBtn" class="btn btn-secondary" disabled>Disconnect</button>
+                <button id="clearBtn" class="btn btn-clear">Clear Logs</button>
+            </div>
+        </div>
+
+        <div class="config-panel">
+            <h3>Configuration</h3>
+            <div class="form-group">
+                <label for="serverUrl">Server URL:</label>
+                <input type="text" id="serverUrl" value="http://localhost:8080/api/v1/subscribe" placeholder="http://localhost:8080/api/v1/subscribe">
+            </div>
+            <div class="form-group">
+                <label for="jwzToken">JWZ Token (optional):</label>
+                <input type="text" id="jwzToken" placeholder="JWZ token for authorization">
+            </div>
+            <div class="form-group checkbox-group">
+                <label>
+                    <input type="checkbox" id="autoReconnect" checked>
+                    Auto-reconnect on disconnect
+                </label>
+            </div>
+        </div>
+
+        <div class="stats-panel">
+            <div class="stat-item">
+                <span class="stat-label">Messages Received:</span>
+                <span class="stat-value" id="messageCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Pings Received:</span>
+                <span class="stat-value" id="pingCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Reconnects:</span>
+                <span class="stat-value" id="reconnectCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Connection Time:</span>
+                <span class="stat-value" id="connectionTime">00:00</span>
+            </div>
+        </div>
+
+        <div class="notifications-panel">
+            <h3>Notifications</h3>
+            <div id="notifications" class="notifications-list"></div>
+        </div>
+
+        <div class="logs-panel">
+            <h3>Event Log</h3>
+            <div id="logs" class="logs-list"></div>
+        </div>
+    </div>
+
+    <script src="eventSourceClient.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

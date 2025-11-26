@@ -9,7 +9,7 @@ import (
 )
 
 func TestNotify_SingleSubscriber(t *testing.T) {
-	service := NewSubscriptionService(10)
+	service := NewSubscriptionService(10, 10)
 	userDID := "did:example:123"
 	payload := NotificationPayload{ID: "1"}
 
@@ -27,7 +27,7 @@ func TestNotify_SingleSubscriber(t *testing.T) {
 }
 
 func TestNotify_MultipleSubscribersForSameUser(t *testing.T) {
-	service := NewSubscriptionService(10)
+	service := NewSubscriptionService(10, 10)
 	userDID := "did:example:123"
 	payload := NotificationPayload{ID: "2"}
 
@@ -63,7 +63,7 @@ func TestNotify_MultipleSubscribersForSameUser(t *testing.T) {
 }
 
 func TestNotify_NoSubscribers(t *testing.T) {
-	service := NewSubscriptionService(10)
+	service := NewSubscriptionService(10, 10)
 	userDID := "did:example:nonexistent"
 	payload := NotificationPayload{ID: "3"}
 
@@ -72,7 +72,7 @@ func TestNotify_NoSubscribers(t *testing.T) {
 }
 
 func TestNotify_DifferentUsers(t *testing.T) {
-	service := NewSubscriptionService(10)
+	service := NewSubscriptionService(10, 10)
 	user1 := "did:example:user1"
 	user2 := "did:example:user2"
 	payload1 := NotificationPayload{ID: "4"}

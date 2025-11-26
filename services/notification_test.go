@@ -74,7 +74,14 @@ func TestNotificationService_SendNotification(t *testing.T) {
 
 	// mock signal with http_test.
 	notificationService := NewNotificationService(
-		notificationClient, cs, redisMock, "host", time.Hour*24, subscriptionMock)
+		notificationClient,
+		cs,
+		redisMock,
+		"host",
+		time.Hour*24,
+		subscriptionMock,
+		[]string{"iden3.web.browser"},
+	)
 
 	device := Device{
 		AppID:   "local.id",
@@ -119,7 +126,14 @@ func TestNotificationService_SendNotificationRejected(t *testing.T) {
 
 	// mock signal with http_test.
 	proxy := NewNotificationService(
-		notificationClient, cs, redisMock, "host", time.Hour*24, subscriptionMock)
+		notificationClient,
+		cs,
+		redisMock,
+		"host",
+		time.Hour*24,
+		subscriptionMock,
+		[]string{"iden3.web.browser"},
+	)
 
 	device := Device{
 		AppID:   "local.id",
@@ -164,7 +178,14 @@ func TestNotificationService_SendNotificationFailed(t *testing.T) {
 
 	// mock signal with http_test.
 	proxy := NewNotificationService(
-		notificationClient, cs, redisMock, "host", time.Hour*24, subscriptionMock)
+		notificationClient,
+		cs,
+		redisMock,
+		"host",
+		time.Hour*24,
+		subscriptionMock,
+		[]string{"iden3.web.browser"},
+	)
 
 	msg := &PushNotification{
 		Message: []byte(`{"my_cat": "123321"}`),

@@ -86,12 +86,21 @@ func main() {
 	log.Info("Connected to Redis")
 
 	subscriptionService := services.NewSubscriptionService(
-		cfg.Subscription.MaxConnectionPerUser)
+		cfg.Subscription.MaxConnectionPerUser,
+		cfg.Subscription.ChannelBufferSize,
+	)
 
 	cachingService := services.NewRedisCacheService(redisClient)
 	notificationClient := services.NewPushClient(c, cfg.Gateway.Host)
-	notificationService := services.NewNotificationService(notificationClient, cryptoService,
-		cachingService, cfg.Server.Host, cfg.Redis.ExpirationDuration, subscriptionService)
+	notificationService := services.NewNotificationService(
+		notificationClient,
+		cryptoService,
+		cachingService,
+		cfg.Server.Host,
+		cfg.Redis.ExpirationDuration,
+		subscriptionService,
+		cfg.SupportedWebAgents,
+	)
 
 	authmiddleware, err := setupAuthMiddleware(cfg)
 	if err != nil {

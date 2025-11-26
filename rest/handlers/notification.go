@@ -116,7 +116,7 @@ func (h *PushNotificationHandler) Get(w http.ResponseWriter, r *http.Request) {
 	// old message format doesn't contain metadata
 	var payload []byte
 	if services.IsEmptyMetadata(msg.Metadata) {
-		// it true: message has raw format without metadata
+		// if true: message has raw format without metadata
 		payload = []byte(respStr)
 	} else {
 		// if false: message has new format with metadata
@@ -239,6 +239,7 @@ func (h *PushNotificationHandler) GetAllMessagesByUniqueID(w http.ResponseWriter
 }
 
 // AckMessage marks a message as read
+// works only for messages with metadata
 func (h *PushNotificationHandler) AckMessage(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	if idParam == "" {

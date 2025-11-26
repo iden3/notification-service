@@ -13,8 +13,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const billionsWebWalletAppID = "billions.web.browser"
-
 // NotificationPayload notification payload structure
 type NotificationPayload struct {
 	ID  string `json:"id"`
@@ -106,12 +104,19 @@ type Notification struct {
 	hostURL             string
 	expirationDuration  time.Duration
 	subscriptionService subscriptionService
+	supportedWebAgents  []string
 }
 
 // NewNotificationService new instance of notification service
 func NewNotificationService(
-	n *PushClient, c cryptoService, cs cachingService, host string,
-	expirationDuration time.Duration, sub subscriptionService) *Notification {
+	n *PushClient,
+	c cryptoService,
+	cs cachingService,
+	host string,
+	expirationDuration time.Duration,
+	sub subscriptionService,
+	supportedWebAgents []string,
+) *Notification {
 	return &Notification{
 		notification:        n,
 		cryptoService:       c,
@@ -119,6 +124,7 @@ func NewNotificationService(
 		hostURL:             host,
 		expirationDuration:  expirationDuration,
 		subscriptionService: sub,
+		supportedWebAgents:  supportedWebAgents,
 	}
 }
 
@@ -247,7 +253,7 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 			URL: u,
 		}
 
-		webBrowserDevices, otherDevices := classifyDevices(devices)
+		webBrowserDevices, otherDevices := ns.classifyDevices(devices)
 
 		ns.notifySubscribers(webBrowserDevices, contentBody)
 		rejectedTokens, err := ns.notification.SendPush(ctx, otherDevices, contentBody)
@@ -261,15 +267,24 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 	return rejects, nil
 }
 
-func classifyDevices(devices []Device) (webBrowserDevices, otherDevices []Device) {
+func (ns *Notification) classifyDevices(devices []Device) (webBrowserDevices, otherDevices []Device) {
 	for _, d := range devices {
-		if d.AppID == billionsWebWalletAppID {
+		if ns.isWebAgent(d.AppID) {
 			webBrowserDevices = append(webBrowserDevices, d)
 		} else {
 			otherDevices = append(otherDevices, d)
 		}
 	}
 	return webBrowserDevices, otherDevices
+}
+
+func (ns *Notification) isWebAgent(appID string) bool {
+	for _, agent := range ns.supportedWebAgents {
+		if appID == agent {
+			return true
+		}
+	}
+	return false
 }
 
 func (ns *Notification) notifySubscribers(devices []Device, payload NotificationPayload) {

@@ -16,10 +16,21 @@ type NotificationService struct {
 	Gateway                  Gateway                  `envconfig:"GATEWAY"`
 	Redis                    Redis                    `envconfig:"REDIS"`
 	Log                      Log                      `envconfig:"LOG"`
+	CORS                     CORS                     `envconfig:"CORS"`
 	PrivateKey               string                   `envconfig:"PRIVATE_KEY" require:"true"`
 	PrivateKeyPath           string                   `envconfig:"PRIVATE_KEY_PATH"`
 	ResolversSettingsPath    string                   `envconfig:"RESOLVERS_SETTINGS_PATH" default:"./resolvers.settings.yaml"`
 	AuthenticationMiddleware AuthenticationMiddleware `envconfig:"AUTH_MIDDLEWARE"`
+	Subscription             Subscription             `envconfig:"SUBSCRIPTION"`
+	EnableHTTPPprof          bool                     `envconfig:"ENABLE_HTTP_PPROF" default:"false"`
+	SupportedWebAgents       []string                 `envconfig:"SUPPORTED_WEB_AGENTS"`
+}
+
+// CORS holds configuration for allowed origins and headers
+type CORS struct {
+	AllowedOrigins []string `envconfig:"ALLOWED_ORIGINS" default:"https://*,http://*"`
+	AllowedHeaders []string `envconfig:"ALLOWED_HEADERS" default:"Accept,Authorization,Content-Type,X-CSRF-Token"`
+	MaxAge         int      `envconfig:"MAX_AGE" default:"300"`
 }
 
 func (n *NotificationService) GetStateResolvers() (map[string]pubsignals.StateResolver, error) {
@@ -65,8 +76,12 @@ type Log struct {
 
 // Server config of issuer.
 type Server struct {
-	Host string `envconfig:"HOST" require:"true"`
-	Port int    `envconfig:"PORT" default:"8085"`
+	Host              string        `envconfig:"HOST" require:"true"`
+	Port              int           `envconfig:"PORT" default:"8085"`
+	ReadHeaderTimeout time.Duration `envconfig:"READ_HEADER_TIMEOUT" default:"10s"`
+	ReadTimeout       time.Duration `envconfig:"READ_TIMEOUT" default:"15s"`
+	IdleTimeout       time.Duration `envconfig:"IDLE_TIMEOUT" default:"120s"`
+	MaxHeaderBytes    int           `envconfig:"MAX_HEADER_BYTES" default:"1048576"`
 }
 
 // Gateway is public gateway config
@@ -86,4 +101,10 @@ type AuthenticationMiddleware struct {
 	StateTransitionDelay time.Duration `envconfig:"STATE_TRANSITION_DELAY"`
 	ProofGenerationDelay time.Duration `envconfig:"PROOF_GENERATION_DELAY"`
 	JWZGenerationDelay   time.Duration `envconfig:"JWZ_GENERATION_DELAY" default:"24h"` // Set 0 to disable jwz rotation
+}
+
+type Subscription struct {
+	PingTickerTime       time.Duration `envconfig:"PING_TICKER_TIME" default:"10s"`
+	MaxConnectionPerUser int           `envconfig:"MAX_CONNECTION_PER_USER" default:"10"`
+	ChannelBufferSize    int           `envconfig:"CHANNEL_BUFFER_SIZE" default:"10"`
 }

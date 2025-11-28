@@ -13,6 +13,34 @@ import (
 	"github.com/pkg/errors"
 )
 
+// NotificationPayload notification payload structure
+type NotificationPayload struct {
+	ID  string `json:"id"`
+	URL string `json:"url"`
+}
+
+type NotificationMetadata struct {
+	CreatedAt time.Time `json:"created_at"`
+	ReadAt    time.Time `json:"read_at"`
+	IsRead    bool      `json:"is_read"`
+}
+
+func NewMetadata() NotificationMetadata {
+	return NotificationMetadata{
+		CreatedAt: time.Now().UTC(),
+		IsRead:    false,
+	}
+}
+
+func IsEmptyMetadata(m NotificationMetadata) bool {
+	return m.CreatedAt.IsZero() && m.ReadAt.IsZero() && !m.IsRead
+}
+
+type NotificationContent struct {
+	Metadata NotificationMetadata `json:"metadata"`
+	Body     json.RawMessage      `json:"body"`
+}
+
 // PushNotification is a structure of message to accept from sender
 type PushNotification struct {
 	Message      json.RawMessage `json:"message"`
@@ -64,23 +92,39 @@ type cachingService interface {
 	Set(ctx context.Context, key string, value interface{}, duration time.Duration) error
 }
 
+type subscriptionService interface {
+	Notify(userDID string, payload NotificationPayload)
+}
+
 // Notification is a service to notification push notification
 type Notification struct {
-	notification       *PushClient
-	cryptoService      cryptoService
-	cachingService     cachingService
-	hostURL            string
-	expirationDuration time.Duration
+	notification        *PushClient
+	cryptoService       cryptoService
+	cachingService      cachingService
+	hostURL             string
+	expirationDuration  time.Duration
+	subscriptionService subscriptionService
+	supportedWebAgents  []string
 }
 
 // NewNotificationService new instance of notification service
-func NewNotificationService(n *PushClient, c cryptoService, cs cachingService, host string, expirationDuration time.Duration) *Notification {
+func NewNotificationService(
+	n *PushClient,
+	c cryptoService,
+	cs cachingService,
+	host string,
+	expirationDuration time.Duration,
+	sub subscriptionService,
+	supportedWebAgents []string,
+) *Notification {
 	return &Notification{
-		notification:       n,
-		cryptoService:      c,
-		cachingService:     cs,
-		hostURL:            host,
-		expirationDuration: expirationDuration,
+		notification:        n,
+		cryptoService:       c,
+		cachingService:      cs,
+		hostURL:             host,
+		expirationDuration:  expirationDuration,
+		subscriptionService: sub,
+		supportedWebAgents:  supportedWebAgents,
 	}
 }
 
@@ -180,7 +224,10 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 		idToDevices[key] = append(idToDevices[key], d)
 	}
 
-	bytesToSave, err := json.Marshal(push.Message)
+	bytesToSave, err := json.Marshal(NotificationContent{
+		Metadata: NewMetadata(),
+		Body:     push.Message,
+	})
 	if err != nil {
 		return nil, errors.New("failed to prepare notification")
 	}
@@ -201,24 +248,15 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 			return nil, errors.New("failed to build notification URL")
 		}
 
-		contentBody := struct {
-			ID  string `json:"id"`
-			URL string `json:"url"`
-		}{
+		contentBody := NotificationPayload{
 			ID:  saveID,
 			URL: u,
 		}
 
-		rawContentBody, err := json.Marshal(contentBody)
-		if err != nil {
-			log.Error(err)
-			return nil, errors.New("failed to marshal notification content")
-		}
+		webBrowserDevices, otherDevices := ns.classifyDevices(devices)
 
-		c := Content{
-			Body: rawContentBody,
-		}
-		rejectedTokens, err := ns.notification.SendPush(ctx, devices, c)
+		ns.notifySubscribers(webBrowserDevices, contentBody)
+		rejectedTokens, err := ns.notification.SendPush(ctx, otherDevices, contentBody)
 		if err != nil {
 			log.Error(err)
 			return nil, errors.New("failed to notify devices")
@@ -227,6 +265,33 @@ func (ns *Notification) notify(ctx context.Context, push *PushNotification, devi
 		rejects = append(rejects, rejectedTokens...)
 	}
 	return rejects, nil
+}
+
+func (ns *Notification) classifyDevices(devices []Device) (webBrowserDevices, otherDevices []Device) {
+	for _, d := range devices {
+		if ns.isWebAgent(d.AppID) {
+			webBrowserDevices = append(webBrowserDevices, d)
+		} else {
+			otherDevices = append(otherDevices, d)
+		}
+	}
+	return webBrowserDevices, otherDevices
+}
+
+func (ns *Notification) isWebAgent(appID string) bool {
+	for _, agent := range ns.supportedWebAgents {
+		if appID == agent {
+			return true
+		}
+	}
+	return false
+}
+
+func (ns *Notification) notifySubscribers(devices []Device, payload NotificationPayload) {
+	for _, device := range devices {
+		// in case of the web browser pushtoken is uniqueID
+		ns.subscriptionService.Notify(device.UniqueID, payload)
+	}
 }
 
 func buildResourceURL(host, id string) (string, error) {

@@ -119,7 +119,7 @@ func (v *jwzAuthMiddleware) JWZAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		authPubinputs := &circuits.AuthV2PubSignals{}
+		authPubinputs := &circuits.AuthV3PubSignals{}
 		if err := t.ParsePubSignals(authPubinputs); err != nil {
 			http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
 			return

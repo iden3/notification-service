@@ -181,8 +181,7 @@ func (h *PushNotificationHandler) GetAllMessagesByUniqueID(w http.ResponseWriter
 	}
 
 	if values == nil {
-		utils.ErrorJSON(w, r, http.StatusNotFound,
-			errors.New("notifications not found"), "expired", 0)
+		render.JSON(w, r, []interface{}{})
 		return
 	}
 
@@ -202,9 +201,12 @@ func (h *PushNotificationHandler) GetAllMessagesByUniqueID(w http.ResponseWriter
 	for i := range keys {
 		msg, ok := values[i].(string)
 		if !ok {
-			utils.ErrorJSON(w, r, http.StatusNotFound,
-				errors.New("invalid message from redis"), "error", 0)
-			return
+			// skip invalid message
+			log.WithContext(r.Context()).Warn(
+				"invalid message from cache, skipping",
+				slog.String("key", keys[i]),
+			)
+			continue
 		}
 
 		var nContent services.NotificationContent
@@ -229,13 +231,7 @@ func (h *PushNotificationHandler) GetAllMessagesByUniqueID(w http.ResponseWriter
 		})
 	}
 
-	render.Status(r, http.StatusOK)
-	// here we can't use render.JSON because we have to handle error in another way
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	if err := json.NewEncoder(w).Encode(respStr); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	render.JSON(w, r, respStr)
 }
 
 // AckMessage marks a message as read
